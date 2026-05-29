@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "start": "node server.js",
     "start:backend": "npm --prefix backend start",
     "start:frontend": "npm --prefix frontend run dev",
     "dev": "npx concurrently \"npm --prefix backend start\" \"npm --prefix frontend run dev\""
