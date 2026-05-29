@@ -6,7 +6,9 @@ const fs = require('fs');
 const db = require('./database');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["https://top-magic.vercel.app", "http://localhost:5173"]
+}));
 app.use(express.json());
 
 // مجلد الصور
