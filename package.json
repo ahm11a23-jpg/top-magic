@@ -1,0 +1,13 @@
+{
+  "name": "my-store",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start:backend": "npm --prefix backend start",
+    "start:frontend": "npm --prefix frontend run dev",
+    "dev": "npx concurrently \"npm --prefix backend start\" \"npm --prefix frontend run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

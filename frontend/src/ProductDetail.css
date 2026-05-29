@@ -1,0 +1,123 @@
+.detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
+  border-radius: 18px;
+  width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 36px;
+  position: relative;
+  animation: popIn 0.28s cubic-bezier(.2,.9,.2,1);
+  text-align: right;
+  box-shadow: var(--shadow-deep);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.detail-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(15,11,16,0.04);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease, background 0.16s;
+}
+
+.detail-close:hover { transform: scale(1.08); background: rgba(233,30,140,0.08); }
+
+.detail-image {
+  font-size: 110px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.detail-info h2 {
+  font-family: var(--heading);
+  font-size: 28px;
+  color: var(--text-h);
+  margin-bottom: 8px;
+}
+
+.detail-category {
+  color: #888;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.detail-price {
+  color: var(--gold);
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.detail-description {
+  margin-bottom: 20px;
+}
+
+.detail-description h4,
+.detail-features h4 {
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.detail-description p {
+  color: #555;
+  line-height: 1.8;
+}
+
+.detail-features {
+  margin-bottom: 24px;
+}
+
+.detail-features ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-features ul li {
+  color: #555;
+  font-size: 15px;
+}
+
+.detail-add-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--pink), var(--gold));
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.16s ease, box-shadow 0.16s;
+}
+
+.detail-add-btn:hover { transform: translateY(-3px); box-shadow: var(--shadow-deep); }
