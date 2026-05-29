@@ -84,8 +84,8 @@ function App() {
   const heroRef = useRef(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products").then(r => r.json()).then(setProducts).catch(console.error);
-    fetch("http://localhost:5000/api/delivery").then(r => r.json()).then(setWilayas).catch(console.error);
+    fetch("https://top-magic-production.up.railway.app/api/products").then(r => r.json()).then(setProducts).catch(console.error);
+    fetch("https://top-magic-production.up.railway.app/api/delivery").then(r => r.json()).then(setWilayas).catch(console.error);
   }, []);
 
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
@@ -116,7 +116,7 @@ function App() {
   const handleOrder = async () => {
     if (!customerName || !customerPhone) { alert("Veuillez entrer votre nom et téléphone!"); return; }
     if (!selectedWilaya) { alert("Veuillez choisir une wilaya."); return; }
-    const res = await fetch("http://localhost:5000/api/orders", {
+    const res = await fetch("https://top-magic-production.up.railway.app/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
