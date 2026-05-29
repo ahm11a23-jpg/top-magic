@@ -25,13 +25,13 @@ function Admin({ onClose }) {
   }, [isLoggedIn]);
 
   const loadProducts = () =>
-    fetch("http://localhost:5000/api/products").then(r => r.json()).then(setProducts);
+    fetch("https://top-magic-production.up.railway.app/api/products").then(r => r.json()).then(setProducts);
 
   const loadOrders = () =>
-    fetch("http://localhost:5000/api/orders").then(r => r.json()).then(setOrders);
+    fetch("https://top-magic-production.up.railway.app/api/orders").then(r => r.json()).then(setOrders);
 
   const handleLogin = async () => {
-    const res = await fetch("http://localhost:5000/api/admin/login", {
+    const res = await fetch("https://top-magic-production.up.railway.app/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password })
@@ -77,7 +77,7 @@ function Admin({ onClose }) {
     }
     form.images.forEach(img => formData.append("images", img));
 
-    const res = await fetch("http://localhost:5000/api/products", { method: "POST", body: formData });
+    const res = await fetch("https://top-magic-production.up.railway.app/api/products", { method: "POST", body: formData });
     const data = await res.json();
     setMessage(data.message);
     setForm({ name: "", price: "", category: "", description: "", images: [], is_pack: false, pack_items: [""] });
@@ -88,12 +88,12 @@ function Admin({ onClose }) {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer ce produit?")) return;
-    await fetch(`http://localhost:5000/api/products/${id}`, { method: "DELETE" });
+    await fetch(`https://top-magic-production.up.railway.app/api/products/${id}`, { method: "DELETE" });
     loadProducts();
   };
 
   const updateOrderStatus = async (id, status) => {
-    await fetch(`http://localhost:5000/api/orders/${id}`, {
+    await fetch(`https://top-magic-production.up.railway.app/api/orders/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
