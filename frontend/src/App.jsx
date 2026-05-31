@@ -47,12 +47,12 @@ function ProductCard({ product, onAdd, onOpen }) {
         <span className="product-category">{product.category}</span>
         <h3 className="product-name">{product.name}</h3>
         <div className="stars">★★★★★</div>
-        {product.is_pack && items.length > 0 && (
+        {!!product.is_pack && items.length > 0 && (
           <ul className="pack-items-preview">
             {items.map((item, i) => <li key={i}>✓ {item}</li>)}
           </ul>
         )}
-        {!product.is_pack && product.description && product.description !== "0" && (
+        {!product.is_pack && !!product.description && product.description !== "0" && (
           <p className="product-desc">{product.description}</p>
         )}
         <div className="product-footer">
