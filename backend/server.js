@@ -1,28 +1,41 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
 const db = require('./database');
 
 const app = express();
+
 app.use(cors({
   origin: ["https://top-magic.vercel.app", "http://localhost:5173"]
 }));
 app.use(express.json());
 
-// مجلد الصور
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-app.use('/uploads', express.static(uploadsDir));
-
-// إعداد رفع الصور
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+// ── Cloudinary Config ──────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload = multer({ storage });
-const uploadMany = multer({ storage }).array('images', 10);
+
+// ── Multer: الذاكرة مباشرة (بدون حفظ محلي) ────────────────────────
+const upload = multer({ storage: multer.memoryStorage() });
+
+// ── Helper: رفع buffer على Cloudinary ─────────────────────────────
+function uploadToCloudinary(buffer, mimetype) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'top-magic', resource_type: 'image' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
+// ── Routes ─────────────────────────────────────────────────────────
 
 // جلب المنتجات
 app.get('/api/products', (req, res) => {
@@ -31,29 +44,29 @@ app.get('/api/products', (req, res) => {
 });
 
 // إضافة منتج مع صور متعددة
-app.post('/api/products', (req, res) => {
-  uploadMany(req, res, (err) => {
-    if (err) return res.status(500).json({ message: err.message });
-    try {
-      const { name, price, category, description, is_pack, pack_items } = req.body;
-      const files = req.files || [];
-      // أول صورة هي الرئيسية
-      const image = files.length > 0
-        ? `http://localhost:5000/uploads/${files[0].filename}`
-        : req.body.image || '🧴';
-      // كل الصور كـ JSON array
-      const imagesArr = files.map(f => `http://localhost:5000/uploads/${f.filename}`);
-      const imagesStr = imagesArr.length > 0 ? JSON.stringify(imagesArr) : null;
-      const isPack = is_pack === "1" ? 1 : 0;
-      const packItemsStr = isPack && pack_items ? pack_items : null;
-      db.prepare(
-        'INSERT INTO products (name, price, image, category, description, is_pack, pack_items, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).run(name, parseFloat(price), image, category, description, isPack, packItemsStr, imagesStr);
-      res.json({ message: 'Product added!' });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+app.post('/api/products', upload.array('images', 10), async (req, res) => {
+  try {
+    const { name, price, category, description, is_pack, pack_items } = req.body;
+    const files = req.files || [];
+
+    // رفع كل الصور على Cloudinary بالتوازي
+    const uploadedUrls = await Promise.all(
+      files.map(f => uploadToCloudinary(f.buffer, f.mimetype))
+    );
+
+    const image    = uploadedUrls.length > 0 ? uploadedUrls[0] : (req.body.image || '🧴');
+    const imagesStr = uploadedUrls.length > 0 ? JSON.stringify(uploadedUrls) : null;
+    const isPack   = is_pack === "1" ? 1 : 0;
+    const packItemsStr = isPack && pack_items ? pack_items : null;
+
+    db.prepare(
+      'INSERT INTO products (name, price, image, category, description, is_pack, pack_items, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, parseFloat(price), image, category, description, isPack, packItemsStr, imagesStr);
+
+    res.json({ message: 'Product added!' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // حذف منتج
@@ -75,6 +88,7 @@ app.post('/api/admin/login', (req, res) => {
     res.status(401).json({ success: false, message: 'Wrong password!' });
   }
 });
+
 // حفظ طلب جديد
 app.post('/api/orders', (req, res) => {
   try {
