@@ -52,11 +52,69 @@ function ProductCard({ product, onAdd, onOpen }) {
             {items.map((item, i) => <li key={i}>✓ {item}</li>)}
           </ul>
         )}
-        {!product.is_pack && <p className="product-desc">{product.description}</p>}
+        {!product.is_pack && product.description && product.description !== "0" && (
+          <p className="product-desc">{product.description}</p>
+        )}
         <div className="product-footer">
           <span className="price">{Number(product.price).toLocaleString()} DA</span>
           <button className={`add-btn ${added ? "added" : ""}`} onClick={handleAdd}>
             {added ? "✓" : "🛒"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== PRODUCT DETAIL MODAL =====
+function ProductDetailModal({ product, onClose, onAdd }) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const allImgs = (() => {
+    try {
+      const imgs = product.images ? JSON.parse(product.images) : null;
+      return imgs && imgs.length > 0 ? imgs : (product.image && product.image.startsWith("http") ? [product.image] : null);
+    } catch { return product.image && product.image.startsWith("http") ? [product.image] : null; }
+  })();
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="detail-modal" onClick={e => e.stopPropagation()}>
+        <button className="icon-btn detail-close-btn" onClick={onClose}>✕</button>
+        <div className="detail-img-wrap">
+          {allImgs ? (
+            <>
+              <img src={allImgs[imgIdx]} alt={product.name} />
+              {allImgs.length > 1 && (
+                <>
+                  <button className="gallery-btn gallery-prev" onClick={e => { e.stopPropagation(); setImgIdx(i => (i - 1 + allImgs.length) % allImgs.length); }}>‹</button>
+                  <button className="gallery-btn gallery-next" onClick={e => { e.stopPropagation(); setImgIdx(i => (i + 1) % allImgs.length); }}>›</button>
+                  <div className="gallery-dots">
+                    {allImgs.map((_, i) => (
+                      <span key={i} className={`gallery-dot ${i === imgIdx ? "active" : ""}`} onClick={e => { e.stopPropagation(); setImgIdx(i); }} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <span style={{fontSize:"80px"}}>{product.image}</span>
+          )}
+        </div>
+        <div className="detail-body">
+          <span className="product-category">{product.category}</span>
+          <h2>{product.name}</h2>
+          <div className="stars" style={{fontSize:"18px", margin:"8px 0"}}>★★★★★</div>
+          {product.description && product.description !== "0" && (
+            <p className="detail-desc">{product.description}</p>
+          )}
+          <div className="detail-price">{Number(product.price).toLocaleString()} DA</div>
+          <div className="detail-features">
+            <span>✅ Produit Authentique</span>
+            <span>🚚 Livraison Rapide</span>
+            <span>↩️ Retour 30 jours</span>
+          </div>
+          <button className="order-btn" style={{marginTop:"16px"}} onClick={() => { onAdd(product); onClose(); }}>
+            🛒 Ajouter au panier — {Number(product.price).toLocaleString()} DA
           </button>
         </div>
       </div>
@@ -570,31 +628,11 @@ function App() {
 
       {/* Product Detail Modal */}
       {selectedProduct && (
-        <div className="overlay" onClick={() => setSelectedProduct(null)}>
-          <div className="detail-modal" onClick={e => e.stopPropagation()}>
-            <button className="icon-btn detail-close-btn" onClick={() => setSelectedProduct(null)}>✕</button>
-            <div className="detail-img-wrap">
-              {selectedProduct.image && selectedProduct.image.startsWith("http")
-                ? <img src={selectedProduct.image} alt={selectedProduct.name} />
-                : <span style={{fontSize:"80px"}}>{selectedProduct.image}</span>}
-            </div>
-            <div className="detail-body">
-              <span className="product-category">{selectedProduct.category}</span>
-              <h2>{selectedProduct.name}</h2>
-              <div className="stars" style={{fontSize:"18px",margin:"8px 0"}}>★★★★★</div>
-              <p className="detail-desc">{selectedProduct.description || "Produit de haute qualité, disponible maintenant."}</p>
-              <div className="detail-price">{Number(selectedProduct.price).toLocaleString()} DA</div>
-              <div className="detail-features">
-                <span>✅ Produit Authentique</span>
-                <span>🚚 Livraison Rapide</span>
-                <span>↩️ Retour 30 jours</span>
-              </div>
-              <button className="order-btn" style={{marginTop:"16px"}} onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}>
-                🛒 Ajouter au panier — {Number(selectedProduct.price).toLocaleString()} DA
-              </button>
-            </div>
-          </div>
-        </div>
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAdd={addToCart}
+        />
       )}
 
       {showAdmin && <Admin onClose={() => setShowAdmin(false)} />}

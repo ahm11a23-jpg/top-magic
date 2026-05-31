@@ -92,10 +92,12 @@ app.post('/api/admin/login', (req, res) => {
 // حفظ طلب جديد
 app.post('/api/orders', (req, res) => {
   try {
-    const { customer_name, customer_phone, products, total } = req.body;
+    const { customer_name, customer_phone, wilaya, products, total } = req.body;
+    // إضافة عمود wilaya إذا لم يكن موجوداً
+    try { db.prepare('ALTER TABLE orders ADD COLUMN wilaya TEXT').run(); } catch {}
     db.prepare(
-      'INSERT INTO orders (customer_name, customer_phone, products, total) VALUES (?, ?, ?, ?)'
-    ).run(customer_name, customer_phone, JSON.stringify(products), total);
+      'INSERT INTO orders (customer_name, customer_phone, wilaya, products, total) VALUES (?, ?, ?, ?, ?)'
+    ).run(customer_name, customer_phone, wilaya || "", JSON.stringify(products), total);
     res.json({ message: 'Order saved!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
