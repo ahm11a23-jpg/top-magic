@@ -104,18 +104,28 @@ function Admin({ onClose }) {
   const downloadConfirmedOrders = () => {
     const confirmed = orders.filter(o => o.status === "Confirmé");
     if (confirmed.length === 0) { alert("Aucune commande confirmée!"); return; }
-    let content = "COMMANDES CONFIRMÉES - TOP MAGIC\n================================\n\n";
-    confirmed.forEach((o, i) => {
-      content += `${i + 1}. Client: ${o.customer_name}\n`;
-      content += `   Téléphone: ${o.customer_phone}\n`;
-      content += `   Produits: ${o.products}\n`;
-      content += `   Total: ${o.total} DA\n`;
-      content += `   Date: ${new Date(o.created_at).toLocaleString()}\n\n`;
-    });
-    const blob = new Blob([content], { type: "text/plain" });
+
+    // Build CSV content (Excel-compatible UTF-8)
+    const rows = [
+      ["#", "Client", "Téléphone", "Wilaya", "Produits", "Total (DA)", "Date"],
+      ...confirmed.map((o, i) => [
+        i + 1,
+        o.customer_name,
+        o.customer_phone,
+        o.wilaya || "",
+        o.products,
+        o.total,
+        new Date(o.created_at).toLocaleString("fr-DZ")
+      ])
+    ];
+    const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "commandes_confirmees.txt"; a.click();
+    a.href = url;
+    a.download = `commandes_confirmees_${new Date().toLocaleDateString("fr-DZ").replace(/\//g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const totalRevenue = orders.filter(o => o.status === "Confirmé").reduce((s, o) => s + o.total, 0);

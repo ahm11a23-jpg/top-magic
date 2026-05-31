@@ -19,7 +19,7 @@ const CAT_ICONS = {
 };
 
 // ===== PRODUCT CARD =====
-function ProductCard({ product, onAdd }) {
+function ProductCard({ product, onAdd, onOpen }) {
   const [wish, setWish] = useState(false);
   const [added, setAdded] = useState(false);
   const items = product.pack_items ? JSON.parse(product.pack_items) : [];
@@ -31,7 +31,7 @@ function ProductCard({ product, onAdd }) {
   };
 
   return (
-    <div className={`product-card ${product.is_pack ? "pack-card" : ""}`}>
+    <div className={`product-card ${product.is_pack ? "pack-card" : ""}`} onClick={() => onOpen && onOpen(product)} style={{cursor:"pointer"}}>
       {product.is_pack && <div className="pack-badge">🎁 Pack</div>}
       <button className={`wish-btn ${wish ? "wished" : ""}`} onClick={() => setWish(!wish)}>
         {wish ? Icons.heartFull : Icons.heart}
@@ -76,6 +76,8 @@ function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [notification, setNotification] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [wilayas, setWilayas] = useState([]);
@@ -127,10 +129,8 @@ function App() {
     });
     const result = await res.json();
     if (!res.ok) { setNotification(result?.message || "Erreur!"); return; }
-    const msg = `Bonjour Top Magic!\nNom: ${customerName}\nTel: ${customerPhone}\nWilaya: ${selectedWilaya.wilaya_name}\nCommande:\n${cart.map(i => `- ${i.name} x${i.qty} = ${i.price * i.qty} DA`).join('\n')}\nProduits: ${total} DA\nLivraison: ${deliveryPrice} DA\nTotal: ${total + deliveryPrice} DA`;
-    setCart([]); setCustomerName(""); setCustomerPhone(""); setShowCart(false);
-    setNotification("✅ Commande envoyée avec succès!"); setTimeout(() => setNotification(""), 3000);
-    window.open(`https://wa.me/213560938555?text=${encodeURIComponent(msg)}`, '_blank');
+    setCart([]); setCustomerName(""); setCustomerPhone(""); setSelectedWilaya(null); setDeliveryPrice(0);
+    setOrderConfirmed(true);
   };
 
   const categories = ["Tous", ...new Set(products.map(p => p.category))];
@@ -279,7 +279,7 @@ function App() {
               <span className="section-line"></span>
             </div>
             <div className="products-grid">
-              {products.slice(0, 4).map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} />)}
+              {products.slice(0, 4).map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} onOpen={setSelectedProduct} />)}
             </div>
             <div style={{textAlign:"center", marginTop:"32px"}}>
               <button className="btn-outline" onClick={() => navigate("products")}>
@@ -409,7 +409,7 @@ function App() {
                   <p>Aucun produit trouvé</p>
                 </div>
               ) : (
-                filtered.map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} />)
+                filtered.map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} onOpen={setSelectedProduct} />)
               )}
             </div>
           </div>
@@ -525,9 +525,21 @@ function App() {
                 </div>
 
                 <button className="order-btn" onClick={handleOrder}>
-                  💬 Commander via WhatsApp
+                  ✅ Confirmer la commande
                 </button>
               </>
+            )}
+
+            {/* Confirmation screen */}
+            {orderConfirmed && (
+              <div className="order-success">
+                <div className="success-icon">✅</div>
+                <h3>Commande confirmée!</h3>
+                <p>Merci pour votre commande.<br />Notre équipe vous contactera bientôt pour confirmer la livraison.</p>
+                <button className="btn-primary" onClick={() => { setOrderConfirmed(false); setShowCart(false); }}>
+                  Continuer les achats
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -555,6 +567,35 @@ function App() {
           <span>Panier</span>
         </button>
       </nav>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <div className="overlay" onClick={() => setSelectedProduct(null)}>
+          <div className="detail-modal" onClick={e => e.stopPropagation()}>
+            <button className="icon-btn detail-close-btn" onClick={() => setSelectedProduct(null)}>✕</button>
+            <div className="detail-img-wrap">
+              {selectedProduct.image && selectedProduct.image.startsWith("http")
+                ? <img src={selectedProduct.image} alt={selectedProduct.name} />
+                : <span style={{fontSize:"80px"}}>{selectedProduct.image}</span>}
+            </div>
+            <div className="detail-body">
+              <span className="product-category">{selectedProduct.category}</span>
+              <h2>{selectedProduct.name}</h2>
+              <div className="stars" style={{fontSize:"18px",margin:"8px 0"}}>★★★★★</div>
+              <p className="detail-desc">{selectedProduct.description || "Produit de haute qualité, disponible maintenant."}</p>
+              <div className="detail-price">{Number(selectedProduct.price).toLocaleString()} DA</div>
+              <div className="detail-features">
+                <span>✅ Produit Authentique</span>
+                <span>🚚 Livraison Rapide</span>
+                <span>↩️ Retour 30 jours</span>
+              </div>
+              <button className="order-btn" style={{marginTop:"16px"}} onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}>
+                🛒 Ajouter au panier — {Number(selectedProduct.price).toLocaleString()} DA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAdmin && <Admin onClose={() => setShowAdmin(false)} />}
     </div>
