@@ -47,74 +47,16 @@ function ProductCard({ product, onAdd, onOpen }) {
         <span className="product-category">{product.category}</span>
         <h3 className="product-name">{product.name}</h3>
         <div className="stars">★★★★★</div>
-        {!!product.is_pack && items.length > 0 && (
+        {product.is_pack && items.length > 0 && (
           <ul className="pack-items-preview">
             {items.map((item, i) => <li key={i}>✓ {item}</li>)}
           </ul>
         )}
-        {!product.is_pack && !!product.description && product.description !== "0" && (
-          <p className="product-desc">{product.description}</p>
-        )}
+        {!product.is_pack && <p className="product-desc">{product.description}</p>}
         <div className="product-footer">
           <span className="price">{Number(product.price).toLocaleString()} DA</span>
           <button className={`add-btn ${added ? "added" : ""}`} onClick={handleAdd}>
             {added ? "✓" : "🛒"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ===== PRODUCT DETAIL MODAL =====
-function ProductDetailModal({ product, onClose, onAdd }) {
-  const [imgIdx, setImgIdx] = useState(0);
-  const allImgs = (() => {
-    try {
-      const imgs = product.images ? JSON.parse(product.images) : null;
-      return imgs && imgs.length > 0 ? imgs : (product.image && product.image.startsWith("http") ? [product.image] : null);
-    } catch { return product.image && product.image.startsWith("http") ? [product.image] : null; }
-  })();
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="detail-modal" onClick={e => e.stopPropagation()}>
-        <button className="icon-btn detail-close-btn" onClick={onClose}>✕</button>
-        <div className="detail-img-wrap">
-          {allImgs ? (
-            <>
-              <img src={allImgs[imgIdx]} alt={product.name} />
-              {allImgs.length > 1 && (
-                <>
-                  <button className="gallery-btn gallery-prev" onClick={e => { e.stopPropagation(); setImgIdx(i => (i - 1 + allImgs.length) % allImgs.length); }}>‹</button>
-                  <button className="gallery-btn gallery-next" onClick={e => { e.stopPropagation(); setImgIdx(i => (i + 1) % allImgs.length); }}>›</button>
-                  <div className="gallery-dots">
-                    {allImgs.map((_, i) => (
-                      <span key={i} className={`gallery-dot ${i === imgIdx ? "active" : ""}`} onClick={e => { e.stopPropagation(); setImgIdx(i); }} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          ) : (
-            <span style={{fontSize:"80px"}}>{product.image}</span>
-          )}
-        </div>
-        <div className="detail-body">
-          <span className="product-category">{product.category}</span>
-          <h2>{product.name}</h2>
-          <div className="stars" style={{fontSize:"18px", margin:"8px 0"}}>★★★★★</div>
-          {product.description && product.description !== "0" && (
-            <p className="detail-desc">{product.description}</p>
-          )}
-          <div className="detail-price">{Number(product.price).toLocaleString()} DA</div>
-          <div className="detail-features">
-            <span>✅ Produit Authentique</span>
-            <span>🚚 Livraison Rapide</span>
-            <span>↩️ Retour 30 jours</span>
-          </div>
-          <button className="order-btn" style={{marginTop:"16px"}} onClick={() => { onAdd(product); onClose(); }}>
-            🛒 Ajouter au panier — {Number(product.price).toLocaleString()} DA
           </button>
         </div>
       </div>
@@ -276,38 +218,49 @@ function App() {
         <main className="home">
 
           {/* Hero */}
-          <section className="hero" ref={heroRef}>
+          <section className="hero">
             <div className="hero-content">
               <p className="hero-eyebrow">✨ Laboratoires Top Magic</p>
-              <h1>Révélez Votre<br /><span className="gradient-text">Beauté Naturelle</span></h1>
-              <p className="hero-desc">Des soins luxueux pour sublimer votre peau et révéler votre éclat au quotidien.</p>
-              <button className="btn-primary" onClick={() => navigate("products")}>
-                Découvrir Maintenant ✨
-              </button>
-              <div className="hero-stats">
-                <div className="stat"><strong>100%</strong><span>Produits Authentiques</span></div>
-                <div className="stat"><strong>5000+</strong><span>Clients Satisfaits</span></div>
-                <div className="stat"><strong>24/7</strong><span>Support Dédié</span></div>
+              <h1>La beauté qui<br />vous <span className="gradient-text-blue">sublime</span></h1>
+              <p className="hero-desc">Des produits authentiques pour prendre soin de vous chaque jour.</p>
+              <div className="hero-btns">
+                <button className="btn-primary" onClick={() => navigate("products")}>
+                  🛍️ Découvrir nos produits
+                </button>
+                <button className="btn-outline-white" onClick={() => navigate("products")}>
+                  🎁 Voir les offres
+                </button>
               </div>
             </div>
             <div className="hero-visual">
-              <div className="hero-blob"></div>
-              <div className="hero-circle">
-                <span>💄</span>
+              {/* Glow ring */}
+              <div className="hero-glow-ring"></div>
+              <div className="hero-blue-aura"></div>
+              {/* Bubbles */}
+              <span className="hero-bubble hb-1"></span>
+              <span className="hero-bubble hb-2"></span>
+              <span className="hero-bubble hb-3"></span>
+              <span className="hero-bubble hb-4"></span>
+              <span className="hero-bubble hb-5"></span>
+              {/* Sparks */}
+              <span className="hero-spark hs-1"></span>
+              <span className="hero-spark hs-2"></span>
+              <span className="hero-spark hs-3"></span>
+              {/* Product image */}
+              <div className="hero-img-wrap">
+                <img src="/WEB.png" alt="Top Magic Products" className="hero-product-img" />
+                <span className="hero-shine"></span>
               </div>
-              <div className="float-el f1">🌸</div>
-              <div className="float-el f2">✨</div>
-              <div className="float-el f3">💎</div>
             </div>
           </section>
 
           {/* Trust Badges */}
           <section className="trust-strip">
             {[
+              { icon: "🛡️", title: "Produit Authentique", sub: "100% garanti" },
               { icon: "🚚", title: "Livraison Rapide", sub: "Partout en Algérie" },
-              { icon: "✅", title: "Produits Certifiés", sub: "100% Authentiques" },
-              { icon: "💳", title: "Paiement Sécurisé", sub: "Transactions Protégées" },
-              { icon: "😊", title: "Satisfaction Garantie", sub: "Remboursement Facile" },
+              { icon: "↩️", title: "Retour 30 jours", sub: "Satisfait ou remboursé" },
+              { icon: "💳", title: "Paiement à la livraison", sub: "Payez à la réception" },
             ].map((b, i) => (
               <div key={i} className="trust-item">
                 <span className="trust-icon">{b.icon}</span>
@@ -628,11 +581,31 @@ function App() {
 
       {/* Product Detail Modal */}
       {selectedProduct && (
-        <ProductDetailModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAdd={addToCart}
-        />
+        <div className="overlay" onClick={() => setSelectedProduct(null)}>
+          <div className="detail-modal" onClick={e => e.stopPropagation()}>
+            <button className="icon-btn detail-close-btn" onClick={() => setSelectedProduct(null)}>✕</button>
+            <div className="detail-img-wrap">
+              {selectedProduct.image && selectedProduct.image.startsWith("http")
+                ? <img src={selectedProduct.image} alt={selectedProduct.name} />
+                : <span style={{fontSize:"80px"}}>{selectedProduct.image}</span>}
+            </div>
+            <div className="detail-body">
+              <span className="product-category">{selectedProduct.category}</span>
+              <h2>{selectedProduct.name}</h2>
+              <div className="stars" style={{fontSize:"18px",margin:"8px 0"}}>★★★★★</div>
+              <p className="detail-desc">{selectedProduct.description || "Produit de haute qualité, disponible maintenant."}</p>
+              <div className="detail-price">{Number(selectedProduct.price).toLocaleString()} DA</div>
+              <div className="detail-features">
+                <span>✅ Produit Authentique</span>
+                <span>🚚 Livraison Rapide</span>
+                <span>↩️ Retour 30 jours</span>
+              </div>
+              <button className="order-btn" style={{marginTop:"16px"}} onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}>
+                🛒 Ajouter au panier — {Number(selectedProduct.price).toLocaleString()} DA
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showAdmin && <Admin onClose={() => setShowAdmin(false)} />}
