@@ -380,7 +380,7 @@ function App() {
               </div>
             </div>
             <div className="footer-bottom">
-              <p>© 2024 MVR LUXE. Tous droits réservés.</p>
+              <p>© 2025 MVR LUXE. Tous droits réservés.</p>
             </div>
           </footer>
         </main>
@@ -614,6 +614,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
