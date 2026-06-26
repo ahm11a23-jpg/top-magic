@@ -328,7 +328,7 @@ function App() {
             </div>
             <div className="reviews-grid">
               {[
-                { name: "Sarah B.", text: "Les produits TopMagic sont incroyables! Mes cheveux n'ont jamais été aussi doux et brillants.", stars: 5 },
+                { name: "Sarah B.", text: "Les produits MVR LUXE sont incroyables! Mes cheveux n'ont jamais été aussi doux et brillants.", stars: 5 },
                 { name: "Nadia K.", text: "Livraison rapide et produits de qualité. Je recommande à 100%! Le sérum est juste parfait.", stars: 5 },
                 { name: "Lina D.", text: "Enfin des soins qui donnent de vrais résultats. Ma peau est éclatante et hydratée!", stars: 5 },
               ].map((r, i) => (
@@ -354,9 +354,9 @@ function App() {
                 </div>
                 <p>Votre destination beauté pour des produits cosmétiques de qualité supérieure.</p>
                 <div className="social-row">
-                  <a href="https://www.instagram.com/laboratoires_topmagic" target="_blank" className="social-btn">📸</a>
+                  <a href="https://www.instagram.com/laboratoires_MVR LUXE" target="_blank" className="social-btn">📸</a>
                   <a href="https://wa.me/213560938555" target="_blank" className="social-btn">💬</a>
-                  <a href="mailto:topmagic.laboratoires@gmail.com" className="social-btn">📧</a>
+                  <a href="mailto:lamraniissam9@gmail.com" className="social-btn">📧</a>
                 </div>
               </div>
               <div className="footer-col">
@@ -373,14 +373,14 @@ function App() {
               </div>
               <div className="footer-col">
                 <h4>Contact</h4>
-                <p>📞 +213 560 938 555</p>
-                <p>✉️ topmagic.laboratoires@gmail.com</p>
+                <p>📞 +213799031951</p>
+                <p>✉️ lamraniissam9@gmail.com</p>
                 <p>📍 Alger, Algérie</p>
                 <p>🕐 Lun - Sam: 9h00 - 18h00</p>
               </div>
             </div>
             <div className="footer-bottom">
-              <p>© 2024 TopMagic. Tous droits réservés.</p>
+              <p>© 2024 MVR LUXE. Tous droits réservés.</p>
             </div>
           </footer>
         </main>
@@ -442,22 +442,22 @@ function App() {
               <p>05 60 93 85 55</p>
               <span className="contact-cta">Envoyer un message →</span>
             </a>
-            <a href="tel:+213560938555" className="contact-card phone-card">
+            <a href="tel:+213799031951" className="contact-card phone-card">
               <div className="contact-icon">📞</div>
               <h3>Téléphone</h3>
               <p>05 60 93 85 55</p>
               <span className="contact-cta">Appeler maintenant →</span>
             </a>
-            <a href="mailto:topmagic.laboratoires@gmail.com" className="contact-card email-card">
+            <a href="mailto:lamraniissam9@gmail.com" className="contact-card email-card">
               <div className="contact-icon">📧</div>
               <h3>Email</h3>
-              <p>topmagic.laboratoires@gmail.com</p>
+              <p>lamraniissam9@gmail.com</p>
               <span className="contact-cta">Envoyer un email →</span>
             </a>
-            <a href="https://www.instagram.com/laboratoires_topmagic" target="_blank" className="contact-card insta-card">
+            <a href="https://www.instagram.com/laboratoires_MVR LUXE" target="_blank" className="contact-card insta-card">
               <div className="contact-icon">📸</div>
               <h3>Instagram</h3>
-              <p>@laboratoires_topmagic</p>
+              <p>@laboratoires_MVR LUXE</p>
               <span className="contact-cta">Nous suivre →</span>
             </a>
           </div>
@@ -466,8 +466,8 @@ function App() {
           <div className="contact-info-box">
             <div className="info-item"><span>📍</span><div><strong>Adresse</strong><p>Alger, Algérie</p></div></div>
             <div className="info-item"><span>🕐</span><div><strong>Horaires</strong><p>Lun - Sam: 9h00 - 18h00</p></div></div>
-            <div className="info-item"><span>📞</span><div><strong>Téléphone</strong><p>+213 560 938 555</p></div></div>
-            <div className="info-item"><span>✉️</span><div><strong>Email</strong><p>topmagic.laboratoires@gmail.com</p></div></div>
+            <div className="info-item"><span>📞</span><div><strong>Téléphone</strong><p>+213799031951</p></div></div>
+            <div className="info-item"><span>✉️</span><div><strong>Email</strong><p>lamraniissam9@gmail.com</p></div></div>
           </div>
         </main>
       )}
@@ -614,5 +614,6 @@ function App() {
 }
 
 export default App;
+
 
 
