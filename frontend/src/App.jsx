@@ -54,7 +54,7 @@ function ProductCard({ product, onAdd, onOpen }) {
         )}
         {!product.is_pack && <p className="product-desc">{product.description}</p>}
         <div className="product-footer">
-          <span className="price">{Number(product.price).toLocaleString()} DA</span>
+          <span className="price">{product.price > 0 ? Number(product.price).toLocaleString() + " DA" : ""}</span>
           <button className={`add-btn ${added ? "added" : ""}`} onClick={handleAdd}>
             {added ? "✓" : "🛒"}
           </button>
@@ -541,4 +541,6 @@ function App() {
 }
 
 export default App;
+
+
 
