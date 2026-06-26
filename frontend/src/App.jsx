@@ -152,48 +152,7 @@ function App() {
       )}
 
       {/* ===== HEADER ===== */}
-      <header className="header">
-        <div className="header-inner">
-          <button className="icon-btn menu-btn" onClick={() => setShowMenu(true)}>☰</button>
-
-          <div className="logo" onClick={() => navigate("home")}>
-            <span>✨</span>
-            <div>
-              <span className="logo-name">MVR LUXE</span>
-              <span className="logo-sub">Cosmétiques</span>
-            </div>
-          </div>
-
-          <nav className="desktop-nav">
-            <button onClick={() => navigate("home")} className={page === "home" ? "nav-active" : ""}>Accueil</button>
-            <button onClick={() => navigate("products")} className={page === "products" ? "nav-active" : ""}>Produits</button>
-            <button onClick={() => navigate("products")} className="">Catégories</button>
-            <button onClick={() => navigate("contact")} className={page === "contact" ? "nav-active" : ""}>Contact</button>
-          </nav>
-
-          <div className="header-right">
-            <button className="icon-btn" onClick={() => setShowSearch(!showSearch)}>🔍</button>
-            <button className="icon-btn admin-trigger" onClick={() => setShowAdmin(true)}>⚙️</button>
-            <button className="cart-btn" onClick={() => setShowCart(true)}>
-              🛒
-              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-            </button>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        {showSearch && (
-          <div className="search-bar">
-            <input
-              autoFocus
-              placeholder="Rechercher un produit..."
-              value={search}
-              onChange={e => { setSearch(e.target.value); if (e.target.value) navigate("products"); }}
-            />
-            <button onClick={() => { setShowSearch(false); setSearch(""); }}>✕</button>
-          </div>
-        )}
-      </header>
+      <header className="header"><div className="header-inner"><div className="logo" onClick={() => navigate("home")}><div className="logo-mark">M</div><div><span className="logo-name">MVR LUXE</span><span className="logo-sub">Cosmétiques</span></div></div><nav className="nav-links"><button onClick={() => navigate("home")} className={page === "home" ? "active" : ""}>Accueil</button><button onClick={() => navigate("products")} className={page === "products" ? "active" : ""}>Produits</button><button onClick={() => navigate("products")}>Catégories</button><button onClick={() => navigate("contact")} className={page === "contact" ? "active" : ""}>Contact</button></nav><div className="nav-actions"><button className="search-btn" onClick={() => setShowSearch(!showSearch)}>Recherche</button><button className="admin-btn" onClick={() => setShowAdmin(true)}>⚙️</button><button className="cart-btn" onClick={() => setShowCart(true)}>Panier {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}</button></div></div></header>
 
       {/* Mobile Menu Drawer */}
       {showMenu && (
@@ -218,8 +177,8 @@ function App() {
         <main className="home">
 
           {/* Hero */}
-          <section className="hero">
-            <div className="hero-content">
+          <section className="hero"><div className="marquee-strip"><div className="marquee-inner"><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span><span className="marquee-item">Nutrition Corps</span><span className="marquee-sep">·</span><span className="marquee-item">Protection Solaire</span><span className="marquee-sep">·</span><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span></div></div>
+            <div className="hero-content" style={{display:"contents"}}>
               <p className="hero-eyebrow">✨ Laboratoires MVR LUXE</p>
               <h1>La beauté qui<br />vous <span className="gradient-text-blue">sublime</span></h1>
               <p className="hero-desc">Des produits authentiques pour prendre soin de vous chaque jour.</p>
@@ -232,29 +191,7 @@ function App() {
                 </button>
               </div>
             </div>
-            <div className="hero-visual">
-              {/* Glow ring */}
-              <div className="hero-glow-ring"></div>
-              <div className="hero-blue-aura"></div>
-              {/* Bubbles */}
-              <span className="hero-bubble hb-1"></span>
-              <span className="hero-bubble hb-2"></span>
-              <span className="hero-bubble hb-3"></span>
-              <span className="hero-bubble hb-4"></span>
-              <span className="hero-bubble hb-5"></span>
-              {/* Sparks */}
-              <span className="hero-spark hs-1"></span>
-              <span className="hero-spark hs-2"></span>
-              <span className="hero-spark hs-3"></span>
-              {/* Product image */}
-              <div className="hero-img-wrap">
-                <img src="/WEB.png" alt="MVR LUXE Products" className="hero-product-img" />
-                <span className="hero-shine"></span>
-              </div>
-            </div>
-          </section>
-
-          {/* Trust Badges */}
+            <div className="hero-visual"><div className="hero-badge-pill"><span className="hero-badge-dot"></span> Livraison partout en Algérie</div><div className="hero-img-wrap"><img src="/WEB.png" alt="MVR LUXE Products" className="hero-product-img" /></div><div className="hero-stats-grid"><div className="hero-stat"><div className="hero-stat-num">50+</div><div className="hero-stat-label">Produits</div></div><div className="hero-stat"><div className="hero-stat-num">4.9</div><div className="hero-stat-label">Note / 5</div></div><div className="hero-stat"><div className="hero-stat-num">48h</div><div className="hero-stat-label">Livraison</div></div><div className="hero-stat"><div className="hero-stat-num">100%</div><div className="hero-stat-label">Authentique</div></div></div></div></section>{/* Trust Badges */}
           <section className="trust-strip">
             {[
               { icon: "🛡️", title: "Produit Authentique", sub: "100% garanti" },
@@ -273,22 +210,16 @@ function App() {
           <section className="promo-banner">
             <div className="promo-content">
               <p className="promo-label">Offre Spéciale</p>
-              <h2>-30% SUR TOUTE<br />LA COLLECTION ÉTÉ</h2>
+              <h2>-30% sur toute<br />la collection <span>été</span></h2>
               <p>Profitez de notre offre exclusive pour une beauté éclatante</p>
               <button className="btn-primary" onClick={() => navigate("products")}>En Profiter ✨</button>
             </div>
-            <div className="promo-visual">
-              <div className="promo-badge">-30%</div>
-              <span style={{fontSize:"80px"}}>🌟</span>
-            </div>
+            <div className="promo-visual"><span style={{fontSize:"100px"}}>🌸</span></div>
           </section>
 
           {/* Featured Products */}
           <section className="featured-section">
-            <div className="section-head">
-              <h2>Produits Phares</h2>
-              <span className="section-line"></span>
-            </div>
+            <div className="section-head"><div><span className="section-label">Sélection exclusive</span><h2>Produits Phares</h2></div><button className="btn-outline" onClick={() => navigate("products")}>Voir tout →</button></div>
             <div className="products-grid">
               {products.slice(0, 4).map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} onOpen={setSelectedProduct} />)}
             </div>
@@ -301,10 +232,7 @@ function App() {
 
           {/* Categories */}
           <section className="categories-section">
-            <div className="section-head">
-              <h2>Catégories Populaires</h2>
-              <span className="section-line"></span>
-            </div>
+            <div className="section-head"><div><span className="section-label">Nos univers</span><h2>Catégories</h2></div></div>
             <div className="cat-grid">
               {categories.filter(c => c !== "Tous").slice(0, 6).map(cat => (
                 <button key={cat} className="cat-card" onClick={() => { setSelectedCategory(cat); navigate("products"); }}>
@@ -322,8 +250,7 @@ function App() {
 
           {/* Reviews */}
           <section className="reviews-section">
-            <div className="section-head">
-              <h2>Avis de Nos Clientes</h2>
+            <div className="section-head"><div><span className="section-label">Témoignages</span><h2>Avis de Nos Clientes</h2></div>
               <span className="section-line"></span>
             </div>
             <div className="reviews-grid">
@@ -614,6 +541,10 @@ function App() {
 }
 
 export default App;
+
+
+
+
 
 
 
