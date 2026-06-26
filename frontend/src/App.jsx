@@ -32,7 +32,7 @@ function ProductCard({ product, onAdd, onOpen }) {
 
   return (
     <div className={`product-card ${product.is_pack ? "pack-card" : ""}`} onClick={() => onOpen && onOpen(product)} style={{cursor:"pointer"}}>
-      {product.is_pack && <div className="pack-badge">🎁 Pack</div>}
+      {!!product.is_pack && <div className="pack-badge">🎁 Pack</div>}
       <button className={`wish-btn ${wish ? "wished" : ""}`} onClick={() => setWish(!wish)}>
         {wish ? Icons.heartFull : Icons.heart}
       </button>
@@ -47,7 +47,7 @@ function ProductCard({ product, onAdd, onOpen }) {
         <span className="product-category">{product.category}</span>
         <h3 className="product-name">{product.name}</h3>
         <div className="stars">★★★★★</div>
-        {product.is_pack && items.length > 0 && (
+        {!!product.is_pack && items.length > 0 && (
           <ul className="pack-items-preview">
             {items.map((item, i) => <li key={i}>✓ {item}</li>)}
           </ul>
@@ -541,6 +541,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
