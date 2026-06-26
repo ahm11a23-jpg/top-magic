@@ -177,10 +177,10 @@ function App() {
         <main className="home">
 
           {/* Hero */}
-          <section className="hero"><div className="marquee-strip"><div className="marquee-inner"><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span><span className="marquee-item">Nutrition Corps</span><span className="marquee-sep">·</span><span className="marquee-item">Protection Solaire</span><span className="marquee-sep">·</span><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span></div></div>
-            <div className="hero-content" style={{display:"contents"}}>
-              <p className="hero-eyebrow">✨ Laboratoires MVR LUXE</p>
-              <h1>La beauté qui<br />vous <span className="gradient-text-blue">sublime</span></h1>
+          <section className="hero">
+            <div className="hero-content">
+              <p className="hero-eyebrow">Laboratoires MVR LUXE</p>
+              <h1>La beauté qui<br />vous <em style={{fontStyle:"italic",color:"var(--gold2)"}}>sublime</em></h1>
               <p className="hero-desc">Des produits authentiques pour prendre soin de vous chaque jour.</p>
               <div className="hero-btns">
                 <button className="btn-primary" onClick={() => navigate("products")}>
@@ -191,7 +191,7 @@ function App() {
                 </button>
               </div>
             </div>
-            <div className="hero-visual"><div className="hero-badge-pill"><span className="hero-badge-dot"></span> Livraison partout en Algérie</div><div className="hero-img-wrap"><img src="/WEB.png" alt="MVR LUXE Products" className="hero-product-img" /></div><div className="hero-stats-grid"><div className="hero-stat"><div className="hero-stat-num">50+</div><div className="hero-stat-label">Produits</div></div><div className="hero-stat"><div className="hero-stat-num">4.9</div><div className="hero-stat-label">Note / 5</div></div><div className="hero-stat"><div className="hero-stat-num">48h</div><div className="hero-stat-label">Livraison</div></div><div className="hero-stat"><div className="hero-stat-num">100%</div><div className="hero-stat-label">Authentique</div></div></div></div></section>{/* Trust Badges */}
+            <div className="hero-visual"><div className="hero-badge-pill"><span className="hero-badge-dot"></span> Livraison partout en Algérie</div><div className="hero-img-wrap"><img src="/WEB.png" alt="MVR LUXE Products" className="hero-product-img" /></div><div className="hero-stats-grid"><div className="hero-stat"><div className="hero-stat-num">50+</div><div className="hero-stat-label">Produits</div></div><div className="hero-stat"><div className="hero-stat-num">4.9</div><div className="hero-stat-label">Note / 5</div></div><div className="hero-stat"><div className="hero-stat-num">48h</div><div className="hero-stat-label">Livraison</div></div><div className="hero-stat"><div className="hero-stat-num">100%</div><div className="hero-stat-label">Authentique</div></div></div></div></section><div className="marquee-strip"><div className="marquee-inner"><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span><span className="marquee-item">Nutrition Corps</span><span className="marquee-sep">·</span><span className="marquee-item">Protection Solaire</span><span className="marquee-sep">·</span><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span></div></div>{/* Trust Badges */}
           <section className="trust-strip">
             {[
               { icon: "🛡️", title: "Produit Authentique", sub: "100% garanti" },
@@ -541,11 +541,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-
-
-
