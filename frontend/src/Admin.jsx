@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import "./Admin.css";
 
 const ADMIN_TOKEN = "admin-token-2024";
@@ -25,13 +25,13 @@ function Admin({ onClose }) {
   }, [isLoggedIn]);
 
   const loadProducts = () =>
-    fetch("https://top-magic-production.up.railway.app/api/products").then(r => r.json()).then(setProducts);
+    fetch("https://mvr-luxe-production.up.railway.app/api/products").then(r => r.json()).then(setProducts);
 
   const loadOrders = () =>
-    fetch("https://top-magic-production.up.railway.app/api/orders").then(r => r.json()).then(setOrders);
+    fetch("https://mvr-luxe-production.up.railway.app/api/orders").then(r => r.json()).then(setOrders);
 
   const handleLogin = async () => {
-    const res = await fetch("https://top-magic-production.up.railway.app/api/admin/login", {
+    const res = await fetch("https://mvr-luxe-production.up.railway.app/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password })
@@ -77,7 +77,7 @@ function Admin({ onClose }) {
     }
     form.images.forEach(img => formData.append("images", img));
 
-    const res = await fetch("https://top-magic-production.up.railway.app/api/products", { method: "POST", body: formData });
+    const res = await fetch("https://mvr-luxe-production.up.railway.app/api/products", { method: "POST", body: formData });
     const data = await res.json();
     setMessage(data.message);
     setForm({ name: "", price: "", category: "", description: "", images: [], is_pack: false, pack_items: [""] });
@@ -88,12 +88,12 @@ function Admin({ onClose }) {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer ce produit?")) return;
-    await fetch(`https://top-magic-production.up.railway.app/api/products/${id}`, { method: "DELETE" });
+    await fetch(`https://mvr-luxe-production.up.railway.app/api/products/${id}`, { method: "DELETE" });
     loadProducts();
   };
 
   const updateOrderStatus = async (id, status) => {
-    await fetch(`https://top-magic-production.up.railway.app/api/orders/${id}`, {
+    await fetch(`https://mvr-luxe-production.up.railway.app/api/orders/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
@@ -138,7 +138,7 @@ function Admin({ onClose }) {
         <div className="admin-login">
           <div className="login-logo">✨</div>
           <h2>Admin Panel</h2>
-          <p>Top Magic Cosmétique</p>
+          <p>MVR LUXE Cosmétique</p>
           <input type="password" placeholder="Mot de passe"
             value={password} onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleLogin()} />
@@ -158,7 +158,7 @@ function Admin({ onClose }) {
         <div className="admin-sidebar">
           <div className="sidebar-logo">
             <span>✨</span>
-            <div><h3>Top Magic</h3><p>Admin Panel</p></div>
+            <div><h3>MVR LUXE</h3><p>Admin Panel</p></div>
           </div>
           <nav className="sidebar-nav">
             <button className={activeTab === "dashboard" ? "nav-active" : ""} onClick={() => setActiveTab("dashboard")}>📊 Dashboard</button>
@@ -407,3 +407,5 @@ function Admin({ onClose }) {
 }
 
 export default Admin;
+
+

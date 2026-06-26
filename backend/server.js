@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
@@ -7,7 +7,7 @@ const db = require('./database');
 const app = express();
 
 app.use(cors({
-  origin: ["https://top-magic.vercel.app", "http://localhost:5173"]
+  origin: ["https://mvr-luxe.vercel.app", "http://localhost:5173"]
 }));
 app.use(express.json());
 
@@ -149,3 +149,4 @@ app.put('/api/delivery/:id', (req, res) => {
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000');
 });
+

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import Admin from "./Admin";
 import "./App.css";
 
@@ -86,8 +86,8 @@ function App() {
   const heroRef = useRef(null);
 
   useEffect(() => {
-    fetch("https://top-magic-production.up.railway.app/api/products").then(r => r.json()).then(setProducts).catch(console.error);
-    fetch("https://top-magic-production.up.railway.app/api/delivery").then(r => r.json()).then(setWilayas).catch(console.error);
+    fetch("https://mvr-luxe-production.up.railway.app/api/products").then(r => r.json()).then(setProducts).catch(console.error);
+    fetch("https://mvr-luxe-production.up.railway.app/api/delivery").then(r => r.json()).then(setWilayas).catch(console.error);
   }, []);
 
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
@@ -118,7 +118,7 @@ function App() {
   const handleOrder = async () => {
     if (!customerName || !customerPhone) { alert("Veuillez entrer votre nom et téléphone!"); return; }
     if (!selectedWilaya) { alert("Veuillez choisir une wilaya."); return; }
-    const res = await fetch("https://top-magic-production.up.railway.app/api/orders", {
+    const res = await fetch("https://mvr-luxe-production.up.railway.app/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -159,7 +159,7 @@ function App() {
           <div className="logo" onClick={() => navigate("home")}>
             <span>✨</span>
             <div>
-              <span className="logo-name">Top Magic</span>
+              <span className="logo-name">MVR LUXE</span>
               <span className="logo-sub">Cosmétiques</span>
             </div>
           </div>
@@ -200,7 +200,7 @@ function App() {
         <div className="menu-overlay" onClick={() => setShowMenu(false)}>
           <div className="menu-drawer" onClick={e => e.stopPropagation()}>
             <div className="menu-header">
-              <div className="logo"><span>✨</span><span className="logo-name">Top Magic</span></div>
+              <div className="logo"><span>✨</span><span className="logo-name">MVR LUXE</span></div>
               <button onClick={() => setShowMenu(false)}>✕</button>
             </div>
             <nav className="menu-nav">
@@ -220,7 +220,7 @@ function App() {
           {/* Hero */}
           <section className="hero">
             <div className="hero-content">
-              <p className="hero-eyebrow">✨ Laboratoires Top Magic</p>
+              <p className="hero-eyebrow">✨ Laboratoires MVR LUXE</p>
               <h1>La beauté qui<br />vous <span className="gradient-text-blue">sublime</span></h1>
               <p className="hero-desc">Des produits authentiques pour prendre soin de vous chaque jour.</p>
               <div className="hero-btns">
@@ -248,7 +248,7 @@ function App() {
               <span className="hero-spark hs-3"></span>
               {/* Product image */}
               <div className="hero-img-wrap">
-                <img src="/WEB.png" alt="Top Magic Products" className="hero-product-img" />
+                <img src="/WEB.png" alt="MVR LUXE Products" className="hero-product-img" />
                 <span className="hero-shine"></span>
               </div>
             </div>
@@ -350,7 +350,7 @@ function App() {
               <div className="footer-brand">
                 <div className="logo" style={{marginBottom:"12px"}}>
                   <span>✨</span>
-                  <div><span className="logo-name">Top Magic</span><span className="logo-sub">Cosmétiques</span></div>
+                  <div><span className="logo-name">MVR LUXE</span><span className="logo-sub">Cosmétiques</span></div>
                 </div>
                 <p>Votre destination beauté pour des produits cosmétiques de qualité supérieure.</p>
                 <div className="social-row">
@@ -614,3 +614,5 @@ function App() {
 }
 
 export default App;
+
+
