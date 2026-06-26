@@ -451,23 +451,7 @@ img { max-width: 100%; display: block; }
   font-weight: 500;
   z-index: 1;
 }
-.wish-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: #fff;
-  border: 1px solid var(--line);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  cursor: pointer;
-  z-index: 1;
-  color: var(--ink3);
-  transition: var(--transition);
-}
+.wish-btn { position: absolute; top: 12px; right: 12px; background: #fff; border: 1px solid var(--line); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; z-index: 1; color: var(--ink3); }
 .wish-btn.wished { color: var(--gold); border-color: var(--gold); }
 .product-img-wrap {
   height: 200px;
@@ -1203,4 +1187,5 @@ img { max-width: 100%; display: block; }
 
 /* ===== GRADIENT HELPER (kept for compatibility) ===== */
 .gradient-text { color: var(--gold); }
+
 
