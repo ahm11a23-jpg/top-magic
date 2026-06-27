@@ -11,21 +11,18 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ── Cloudinary Config ──────────────────────────────────────────────
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ── Multer: الذاكرة مباشرة (بدون حفظ محلي) ────────────────────────
 const upload = multer({ storage: multer.memoryStorage() });
 
-// ── Helper: رفع buffer على Cloudinary ─────────────────────────────
 function uploadToCloudinary(buffer, mimetype) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'top-magic', resource_type: 'image' },
+      { folder: 'mvr-luxe', resource_type: 'image' },
       (error, result) => {
         if (error) reject(error);
         else resolve(result.secure_url);
@@ -35,68 +32,61 @@ function uploadToCloudinary(buffer, mimetype) {
   });
 }
 
-// ── Routes ─────────────────────────────────────────────────────────
-
-// جلب المنتجات
+// GET products
 app.get('/api/products', (req, res) => {
   const products = db.prepare('SELECT * FROM products').all();
   res.json(products);
 });
 
-// إضافة منتج مع صور متعددة
+// POST product
 app.post('/api/products', upload.array('images', 10), async (req, res) => {
   try {
     const { name, price, category, description, is_pack, pack_items } = req.body;
     const files = req.files || [];
-
-    // رفع كل الصور على Cloudinary بالتوازي
-    const uploadedUrls = await Promise.all(
-      files.map(f => uploadToCloudinary(f.buffer, f.mimetype))
-    );
-
-    const image    = uploadedUrls.length > 0 ? uploadedUrls[0] : (req.body.image || '🧴');
+    const uploadedUrls = await Promise.all(files.map(f => uploadToCloudinary(f.buffer, f.mimetype)));
+    const image = uploadedUrls.length > 0 ? uploadedUrls[0] : (req.body.image || '🧴');
     const imagesStr = uploadedUrls.length > 0 ? JSON.stringify(uploadedUrls) : null;
-    const isPack   = is_pack === "1" ? 1 : 0;
+    const isPack = is_pack === "1" ? 1 : 0;
     const packItemsStr = isPack && pack_items ? pack_items : null;
-
     db.prepare(
       'INSERT INTO products (name, price, image, category, description, is_pack, pack_items, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(name, parseFloat(price), image, category, description, isPack, packItemsStr, imagesStr);
-
     res.json({ message: 'Product added!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// حذف منتج
-
-// ===== UPDATE PRODUCT =====
+// PUT product (edit) - FIXED: uses buffer not path
 app.put('/api/products/:id', upload.array('images', 10), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, price, category, description, is_pack, pack_items } = req.body;
-    
-    let image = null;
-    if (req.files && req.files.length > 0) {
-      const result = await cloudinary.uploader.upload(req.files[0].path, { folder: 'mvr-luxe', resource_type: 'image' });
-      image = result.secure_url;
-    }
 
     const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
     if (!existing) return res.status(404).json({ message: 'Produit non trouvé' });
 
-    const finalImage = image || existing.image;
-    
+    let image = existing.image; // keep old image by default
+
+    if (req.files && req.files.length > 0) {
+      // upload new image using buffer (memoryStorage)
+      image = await uploadToCloudinary(req.files[0].buffer, req.files[0].mimetype);
+    }
+
+    const isPack = is_pack === "1" ? 1 : 0;
+    const packItemsStr = isPack && pack_items ? pack_items : null;
+
     db.prepare(
       'UPDATE products SET name=?, price=?, category=?, description=?, is_pack=?, pack_items=?, image=? WHERE id=?'
-    ).run(name, price, category, description, is_pack || '0', pack_items || null, finalImage, id);
+    ).run(name, parseFloat(price), category, description, isPack, packItemsStr, image, id);
 
     res.json({ message: 'Produit modifié avec succès!' });
   } catch (err) {
     res.status(500).json({ message: 'Erreur serveur', error: err.message });
   }
 });
+
+// DELETE product
 app.delete('/api/products/:id', (req, res) => {
   try {
     db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
@@ -106,7 +96,7 @@ app.delete('/api/products/:id', (req, res) => {
   }
 });
 
-// تسجيل دخول Admin
+// Admin login
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
   if (password === 'MVRtopmagic@2024MVR') {
@@ -116,11 +106,10 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
-// حفظ طلب جديد
+// POST order
 app.post('/api/orders', (req, res) => {
   try {
     const { customer_name, customer_phone, wilaya, products, total } = req.body;
-    // إضافة عمود wilaya إذا لم يكن موجوداً
     try { db.prepare('ALTER TABLE orders ADD COLUMN wilaya TEXT').run(); } catch {}
     db.prepare(
       'INSERT INTO orders (customer_name, customer_phone, wilaya, products, total) VALUES (?, ?, ?, ?, ?)'
@@ -131,7 +120,7 @@ app.post('/api/orders', (req, res) => {
   }
 });
 
-// جلب كل الطلبات
+// GET orders
 app.get('/api/orders', (req, res) => {
   try {
     const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
@@ -141,7 +130,7 @@ app.get('/api/orders', (req, res) => {
   }
 });
 
-// تغيير حالة الطلب
+// PUT order status
 app.put('/api/orders/:id', (req, res) => {
   try {
     const { status } = req.body;
@@ -152,7 +141,7 @@ app.put('/api/orders/:id', (req, res) => {
   }
 });
 
-// جلب كل الولايات
+// GET delivery
 app.get('/api/delivery', (req, res) => {
   try {
     const wilayas = db.prepare('SELECT * FROM delivery ORDER BY wilaya_code').all();
@@ -162,7 +151,7 @@ app.get('/api/delivery', (req, res) => {
   }
 });
 
-// تحديث سعر توصيل ولاية
+// PUT delivery price
 app.put('/api/delivery/:id', (req, res) => {
   try {
     const { price } = req.body;
@@ -173,10 +162,4 @@ app.put('/api/delivery/:id', (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log('Server running on http://localhost:5000');
-});
-
-
-
-
+app.listen(5000, () => console.log('Server running on port 5000'));
