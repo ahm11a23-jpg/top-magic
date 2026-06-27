@@ -1,44 +1,65 @@
-﻿import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useCallback, memo } from "react";
 import Admin from "./Admin";
 import "./App.css";
 
-// ===== ICONS =====
-const Icons = {
-  home: "🏠", products: "📦", categories: "⊞", contact: "📞", cart: "🛒",
-  search: "🔍", menu: "☰", heart: "♡", heartFull: "♥", star: "★",
-  delivery: "🚚", certified: "✅", payment: "💳", satisfaction: "😊",
-  whatsapp: "💬", phone: "📞", email: "📧", instagram: "📸",
-  arrow: "→", close: "✕", trash: "🗑️", minus: "−", plus: "+",
-};
+const API = "https://mvr-luxe-production.up.railway.app";
 
-// ===== CATEGORY ICONS =====
 const CAT_ICONS = {
   "Tous": "⊞", "Soins Capillaires": "🧴", "Sérums": "💧", "Serums": "💧",
   "Protection": "🛡️", "Nutrition": "🥑", "Soins Corps": "🌿",
   "Protection Solaire": "☀️", "Coiffage": "✂️", "Soins Visage": "✨",
 };
 
-// ===== PRODUCT CARD =====
-function ProductCard({ product, onAdd, onOpen }) {
+/* ===== SKELETON CARD ===== */
+function SkeletonCard() {
+  return (
+    <div className="product-card skeleton-card">
+      <div className="skeleton skeleton-img" />
+      <div className="product-body">
+        <div className="skeleton skeleton-text short" />
+        <div className="skeleton skeleton-text" />
+        <div className="skeleton skeleton-text medium" />
+        <div className="skeleton skeleton-price" />
+      </div>
+    </div>
+  );
+}
+
+/* ===== PRODUCT CARD ===== */
+const ProductCard = memo(function ProductCard({ product, onAdd, onOpen }) {
   const [wish, setWish] = useState(false);
   const [added, setAdded] = useState(false);
   const items = product.pack_items ? JSON.parse(product.pack_items) : [];
 
-  const handleAdd = () => {
+  const handleAdd = (e) => {
+    e.stopPropagation();
     onAdd(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
 
+  const handleWish = (e) => {
+    e.stopPropagation();
+    setWish(w => !w);
+  };
+
+  const price = parseInt(product.price);
+
   return (
-    <div className={`product-card ${product.is_pack ? "pack-card" : ""}`} onClick={() => onOpen && onOpen(product)} style={{cursor:"pointer"}}>
+    <div
+      className={`product-card${!!product.is_pack ? " pack-card" : ""}`}
+      onClick={() => onOpen(product)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => e.key === "Enter" && onOpen(product)}
+    >
       {!!product.is_pack && <div className="pack-badge">🎁 Pack</div>}
-      <button className={`wish-btn ${wish ? "wished" : ""}`} onClick={() => setWish(!wish)}>
-        {wish ? Icons.heartFull : Icons.heart}
+      <button className={`wish-btn${wish ? " wished" : ""}`} onClick={handleWish} aria-label="Favoris">
+        {wish ? "♥" : "♡"}
       </button>
       <div className="product-img-wrap">
         {product.image && product.image.startsWith("http") ? (
-          <img src={product.image} alt={product.name} className="product-img" />
+          <img src={product.image} alt={product.name} className="product-img" loading="lazy" />
         ) : (
           <span className="product-emoji">{product.image}</span>
         )}
@@ -54,19 +75,54 @@ function ProductCard({ product, onAdd, onOpen }) {
         )}
         {!product.is_pack && <p className="product-desc">{product.description}</p>}
         <div className="product-footer">
-          <span className="price">{product.price && parseInt(product.price) > 0 ? parseInt(product.price).toLocaleString() + " DA" : ""}</span>
-          <button className={`add-btn ${added ? "added" : ""}`} onClick={handleAdd}>
+          <span className="price">{price > 0 ? price.toLocaleString() + " DA" : ""}</span>
+          <button className={`add-btn${added ? " added" : ""}`} onClick={handleAdd} aria-label="Ajouter au panier">
             {added ? "✓" : "🛒"}
           </button>
         </div>
       </div>
     </div>
   );
+});
+
+/* ===== SEARCH BAR ===== */
+function SearchBar({ value, onChange, suggestions, onSelect, onClose }) {
+  return (
+    <div className="search-panel">
+      <div className="search-input-wrap">
+        <span className="search-icon-inner">🔍</span>
+        <input
+          autoFocus
+          type="text"
+          placeholder="Rechercher un produit..."
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="search-input"
+        />
+        <button className="search-close" onClick={onClose}>✕</button>
+      </div>
+      {suggestions.length > 0 && (
+        <ul className="search-suggestions">
+          {suggestions.slice(0, 6).map(p => (
+            <li key={p.id} onClick={() => onSelect(p)}>
+              <span className="sug-emoji">{p.image && !p.image.startsWith("http") ? p.image : "🛍️"}</span>
+              <div>
+                <span className="sug-name">{p.name}</span>
+                <span className="sug-cat">{p.category}</span>
+              </div>
+              <span className="sug-price">{parseInt(p.price) > 0 ? parseInt(p.price).toLocaleString() + " DA" : ""}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
-// ===== MAIN APP =====
-function App() {
+/* ===== MAIN APP ===== */
+export default function App() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState([]);
   const [page, setPage] = useState("home");
   const [showCart, setShowCart] = useState(false);
@@ -75,7 +131,7 @@ function App() {
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Tous");
-  const [notification, setNotification] = useState("");
+  const [toast, setToast] = useState({ msg: "", type: "success" });
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -83,54 +139,68 @@ function App() {
   const [wilayas, setWilayas] = useState([]);
   const [selectedWilaya, setSelectedWilaya] = useState(null);
   const [deliveryPrice, setDeliveryPrice] = useState(0);
-  const heroRef = useRef(null);
 
   useEffect(() => {
-    fetch("https://mvr-luxe-production.up.railway.app/api/products").then(r => r.json()).then(setProducts).catch(console.error);
-    fetch("https://mvr-luxe-production.up.railway.app/api/delivery").then(r => r.json()).then(setWilayas).catch(console.error);
+    Promise.all([
+      fetch(`${API}/api/products`).then(r => r.json()),
+      fetch(`${API}/api/delivery`).then(r => r.json()),
+    ]).then(([prods, wils]) => {
+      setProducts(prods);
+      setWilayas(wils);
+    }).catch(() => {
+      showToast("Erreur de connexion au serveur", "error");
+    }).finally(() => setLoading(false));
   }, []);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast({ msg: "", type: "success" }), 2500);
+  };
 
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
-  const addToCart = (product) => {
+  const addToCart = useCallback((product) => {
     setCart(prev => {
       const exists = prev.find(i => i.id === product.id);
       if (exists) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
       return [...prev, { ...product, qty: 1 }];
     });
-    setNotification(`✅ ${product.name} ajouté au panier!`);
-    setTimeout(() => setNotification(""), 2000);
-  };
+    showToast(`✓ ${product.name} ajouté!`);
+  }, []);
 
-  const updateQty = (id, delta) => {
+  const updateQty = useCallback((id, delta) => {
     setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(0, i.qty + delta) } : i).filter(i => i.qty > 0));
-  };
+  }, []);
 
-  const removeFromCart = (id) => setCart(cart.filter(i => i.id !== id));
+  const removeFromCart = useCallback((id) => setCart(c => c.filter(i => i.id !== id)), []);
 
   const handleWilayaChange = (e) => {
     const w = wilayas.find(w => w.id === parseInt(e.target.value, 10));
-    setSelectedWilaya(w);
+    setSelectedWilaya(w || null);
     setDeliveryPrice(w ? w.price : 0);
   };
 
   const handleOrder = async () => {
-    if (!customerName || !customerPhone) { alert("Veuillez entrer votre nom et téléphone!"); return; }
-    if (!selectedWilaya) { alert("Veuillez choisir une wilaya."); return; }
-    const res = await fetch("https://mvr-luxe-production.up.railway.app/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customer_name: customerName, customer_phone: customerPhone,
-        wilaya: selectedWilaya.wilaya_name, products: cart.map(i => i.name),
-        total: total + deliveryPrice
-      })
-    });
-    const result = await res.json();
-    if (!res.ok) { setNotification(result?.message || "Erreur!"); return; }
-    setCart([]); setCustomerName(""); setCustomerPhone(""); setSelectedWilaya(null); setDeliveryPrice(0);
-    setOrderConfirmed(true);
+    if (!customerName.trim()) { showToast("Veuillez entrer votre nom", "error"); return; }
+    if (!customerPhone.trim()) { showToast("Veuillez entrer votre téléphone", "error"); return; }
+    if (!selectedWilaya) { showToast("Veuillez choisir une wilaya", "error"); return; }
+    try {
+      const res = await fetch(`${API}/api/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name: customerName, customer_phone: customerPhone,
+          wilaya: selectedWilaya.wilaya_name, products: cart.map(i => i.name),
+          total: total + deliveryPrice
+        })
+      });
+      if (!res.ok) throw new Error();
+      setCart([]); setCustomerName(""); setCustomerPhone(""); setSelectedWilaya(null); setDeliveryPrice(0);
+      setOrderConfirmed(true);
+    } catch {
+      showToast("Erreur lors de la commande. Réessayez.", "error");
+    }
   };
 
   const categories = ["Tous", ...new Set(products.map(p => p.category))];
@@ -138,36 +208,96 @@ function App() {
     (selectedCategory === "Tous" || p.category === selectedCategory) &&
     p.name.toLowerCase().includes(search.toLowerCase())
   );
+  const searchSuggestions = search.length > 1
+    ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 6)
+    : [];
 
-  const navigate = (p) => { setPage(p); setShowMenu(false); window.scrollTo(0, 0); };
+  const navigate = (p) => { setPage(p); setShowMenu(false); setShowSearch(false); window.scrollTo(0, 0); };
+
+  const handleSearchSelect = (product) => {
+    setSelectedProduct(product);
+    setShowSearch(false);
+    setSearch("");
+  };
 
   return (
     <div className="app">
 
-      {/* Notification Toast */}
-      {notification && (
-        <div className="toast">
-          <span>{notification}</span>
+      {/* ===== TOAST ===== */}
+      {toast.msg && (
+        <div className={`toast toast-${toast.type}`}>
+          {toast.msg}
         </div>
       )}
 
       {/* ===== HEADER ===== */}
-      <header className="header"><div className="header-inner"><div className="logo" onClick={() => navigate("home")}><div className="logo-mark">M</div><div><span className="logo-name">MVR LUXE</span><span className="logo-sub">Cosmétiques</span></div></div><nav className="nav-links"><button onClick={() => navigate("home")} className={page === "home" ? "active" : ""}>Accueil</button><button onClick={() => navigate("products")} className={page === "products" ? "active" : ""}>Produits</button><button onClick={() => navigate("products")}>Catégories</button><button onClick={() => navigate("contact")} className={page === "contact" ? "active" : ""}>Contact</button></nav><div className="nav-actions"><button className="search-btn" onClick={() => setShowSearch(!showSearch)}>Recherche</button><button className="admin-btn" onClick={() => setShowAdmin(true)}>⚙️</button><button className="cart-btn" onClick={() => setShowCart(true)}>Panier {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}</button></div></div></header>
+      <header className="header">
+        <div className="header-inner">
+          <button className="hamburger" onClick={() => setShowMenu(true)} aria-label="Menu">
+            <span /><span /><span />
+          </button>
+          <div className="logo" onClick={() => navigate("home")}>
+            <div className="logo-mark">M</div>
+            <div>
+              <span className="logo-name">MVR LUXE</span>
+              <span className="logo-sub">Cosmétiques</span>
+            </div>
+          </div>
+          <nav className="nav-links">
+            <button onClick={() => navigate("home")} className={page === "home" ? "active" : ""}>Accueil</button>
+            <button onClick={() => navigate("products")} className={page === "products" ? "active" : ""}>Produits</button>
+            <button onClick={() => navigate("products")}>Catégories</button>
+            <button onClick={() => navigate("contact")} className={page === "contact" ? "active" : ""}>Contact</button>
+          </nav>
+          <div className="nav-actions">
+            <button className="search-btn" onClick={() => setShowSearch(s => !s)} aria-label="Recherche">🔍</button>
+            <button className="admin-btn" onClick={() => setShowAdmin(true)} aria-label="Admin">⚙️</button>
+            <button className="cart-btn" onClick={() => setShowCart(true)} aria-label="Panier">
+              Panier
+              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            </button>
+          </div>
+        </div>
+        {showSearch && (
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            suggestions={searchSuggestions}
+            onSelect={handleSearchSelect}
+            onClose={() => { setShowSearch(false); setSearch(""); }}
+          />
+        )}
+      </header>
 
-      {/* Mobile Menu Drawer */}
+      {/* ===== MOBILE MENU ===== */}
       {showMenu && (
         <div className="menu-overlay" onClick={() => setShowMenu(false)}>
           <div className="menu-drawer" onClick={e => e.stopPropagation()}>
             <div className="menu-header">
-              <div className="logo"><span>✨</span><span className="logo-name">MVR LUXE</span></div>
-              <button onClick={() => setShowMenu(false)}>✕</button>
+              <div className="logo">
+                <div className="logo-mark">M</div>
+                <div><span className="logo-name">MVR LUXE</span><span className="logo-sub">Cosmétiques</span></div>
+              </div>
+              <button className="menu-close" onClick={() => setShowMenu(false)}>✕</button>
             </div>
             <nav className="menu-nav">
-              <button onClick={() => navigate("home")}>🏠 Accueil</button>
-              <button onClick={() => navigate("products")}>📦 Produits</button>
-              <button onClick={() => navigate("contact")}>📞 Contact</button>
-              <button onClick={() => { setShowAdmin(true); setShowMenu(false); }}>⚙️ Admin</button>
+              <button onClick={() => navigate("home")}>
+                <span>🏠</span> Accueil
+              </button>
+              <button onClick={() => navigate("products")}>
+                <span>📦</span> Produits
+              </button>
+              <button onClick={() => navigate("contact")}>
+                <span>📞</span> Contact
+              </button>
+              <button onClick={() => setShowCart(true)}>
+                <span>🛒</span> Panier {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+              </button>
             </nav>
+            <div className="menu-footer">
+              <p>📞 +213 799 031 951</p>
+              <p>✉️ lamraniissam9@gmail.com</p>
+            </div>
           </div>
         </div>
       )}
@@ -175,23 +305,38 @@ function App() {
       {/* ===== HOME PAGE ===== */}
       {page === "home" && (
         <main className="home">
-
-          {/* Hero */}
           <section className="hero">
             <div className="hero-content">
               <p className="hero-eyebrow">Laboratoires MVR LUXE</p>
-              <h1>La beauté qui<br />vous <em style={{fontStyle:"italic",color:"var(--gold2)"}}>sublime</em></h1>
+              <h1>La beauté qui<br />vous <em className="hero-em">sublime</em></h1>
               <p className="hero-desc">Des produits authentiques pour prendre soin de vous chaque jour.</p>
               <div className="hero-btns">
-                <button className="btn-primary" onClick={() => navigate("products")}>
-                  🛍️ Découvrir nos produits
-                </button>
-                <button className="btn-outline-white" onClick={() => navigate("products")}>
-                  🎁 Voir les offres
-                </button>
+                <button className="btn-primary" onClick={() => navigate("products")}>🛍️ Découvrir nos produits</button>
+                <button className="btn-outline-white" onClick={() => navigate("products")}>🎁 Voir les offres</button>
               </div>
             </div>
-            <div className="hero-visual"><div className="hero-badge-pill"><span className="hero-badge-dot"></span> Livraison partout en Algérie</div><div className="hero-stats-grid"><div className="hero-stat"><div className="hero-stat-num">50+</div><div className="hero-stat-label">Produits</div></div><div className="hero-stat"><div className="hero-stat-num">4.9</div><div className="hero-stat-label">Note / 5</div></div><div className="hero-stat"><div className="hero-stat-num">48h</div><div className="hero-stat-label">Livraison</div></div><div className="hero-stat"><div className="hero-stat-num">100%</div><div className="hero-stat-label">Authentique</div></div></div></div></section><div className="marquee-strip"><div className="marquee-inner"><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span><span className="marquee-item">Nutrition Corps</span><span className="marquee-sep">·</span><span className="marquee-item">Protection Solaire</span><span className="marquee-sep">·</span><span className="marquee-item">Soins Capillaires</span><span className="marquee-sep">·</span><span className="marquee-item">Sérums Visage</span><span className="marquee-sep">·</span><span className="marquee-item">Crèmes Hydratantes</span><span className="marquee-sep">·</span></div></div>{/* Trust Badges */}
+            <div className="hero-visual">
+              <div className="hero-badge-pill"><span className="hero-badge-dot"></span> Livraison partout en Algérie</div>
+              <div className="hero-stats-grid">
+                {[["50+","Produits"],["4.9","Note / 5"],["48h","Livraison"],["100%","Authentique"]].map(([n,l]) => (
+                  <div key={l} className="hero-stat">
+                    <div className="hero-stat-num">{n}</div>
+                    <div className="hero-stat-label">{l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <div className="marquee-strip" aria-hidden="true">
+            <div className="marquee-inner">
+              {["Soins Capillaires","Sérums Visage","Crèmes Hydratantes","Nutrition Corps","Protection Solaire","Coiffage Premium",
+                "Soins Capillaires","Sérums Visage","Crèmes Hydratantes","Nutrition Corps","Protection Solaire","Coiffage Premium"].map((t,i) => (
+                <span key={i} className="marquee-item">{t} <span className="marquee-sep">·</span></span>
+              ))}
+            </div>
+          </div>
+
           <section className="trust-strip">
             {[
               { icon: "🛡️", title: "Produit Authentique", sub: "100% garanti" },
@@ -206,7 +351,6 @@ function App() {
             ))}
           </section>
 
-          {/* Promo Banner */}
           <section className="promo-banner">
             <div className="promo-content">
               <p className="promo-label">Offre Spéciale</p>
@@ -214,25 +358,29 @@ function App() {
               <p>Profitez de notre offre exclusive pour une beauté éclatante</p>
               <button className="btn-primary" onClick={() => navigate("products")}>En Profiter ✨</button>
             </div>
-            <div className="promo-visual"><span style={{fontSize:"100px"}}>🌸</span></div>
+            <div className="promo-visual"><span aria-hidden="true">🌸</span></div>
           </section>
 
-          {/* Featured Products */}
           <section className="featured-section">
-            <div className="section-head"><div><span className="section-label">Sélection exclusive</span><h2>Produits Phares</h2></div><button className="btn-outline" onClick={() => navigate("products")}>Voir tout →</button></div>
-            <div className="products-grid">
-              {products.slice(0, 4).map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} onOpen={setSelectedProduct} />)}
+            <div className="section-head">
+              <div><span className="section-label">Sélection exclusive</span><h2>Produits Phares</h2></div>
+              <button className="btn-outline" onClick={() => navigate("products")}>Voir tout →</button>
             </div>
-            <div style={{textAlign:"center", marginTop:"32px"}}>
-              <button className="btn-outline" onClick={() => navigate("products")}>
-                Voir Tous Les Produits →
-              </button>
+            <div className="products-grid">
+              {loading
+                ? Array(4).fill(0).map((_, i) => <SkeletonCard key={i} />)
+                : products.slice(0, 4).map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} onOpen={setSelectedProduct} />)
+              }
+            </div>
+            <div className="center-btn">
+              <button className="btn-outline" onClick={() => navigate("products")}>Voir Tous Les Produits →</button>
             </div>
           </section>
 
-          {/* Categories */}
           <section className="categories-section">
-            <div className="section-head"><div><span className="section-label">Nos univers</span><h2>Catégories</h2></div></div>
+            <div className="section-head">
+              <div><span className="section-label">Nos univers</span><h2>Catégories</h2></div>
+            </div>
             <div className="cat-grid">
               {categories.filter(c => c !== "Tous").slice(0, 6).map(cat => (
                 <button key={cat} className="cat-card" onClick={() => { setSelectedCategory(cat); navigate("products"); }}>
@@ -241,17 +389,11 @@ function App() {
                 </button>
               ))}
             </div>
-            <div style={{textAlign:"center", marginTop:"24px"}}>
-              <button className="btn-outline" onClick={() => navigate("products")}>
-                Voir Toutes Les Catégories
-              </button>
-            </div>
           </section>
 
-          {/* Reviews */}
           <section className="reviews-section">
-            <div className="section-head"><div><span className="section-label">Témoignages</span><h2>Avis de Nos Clientes</h2></div>
-              <span className="section-line"></span>
+            <div className="section-head">
+              <div><span className="section-label">Témoignages</span><h2>Avis de Nos Clientes</h2></div>
             </div>
             <div className="reviews-grid">
               {[
@@ -271,19 +413,17 @@ function App() {
             </div>
           </section>
 
-          {/* Footer */}
           <footer className="footer">
             <div className="footer-grid">
               <div className="footer-brand">
-                <div className="logo" style={{marginBottom:"12px"}}>
-                  <span>✨</span>
+                <div className="logo" style={{marginBottom:"16px"}}>
+                  <div className="logo-mark">M</div>
                   <div><span className="logo-name">MVR LUXE</span><span className="logo-sub">Cosmétiques</span></div>
                 </div>
                 <p>Votre destination beauté pour des produits cosmétiques de qualité supérieure.</p>
                 <div className="social-row">
-                  <a href="https://www.instagram.com/laboratoires_MVR LUXE" target="_blank" className="social-btn">📸</a>
-                  <a href="https://wa.me/213560938555" target="_blank" className="social-btn">💬</a>
-                  <a href="mailto:lamraniissam9@gmail.com" className="social-btn">📧</a>
+                  <a href="https://wa.me/213799031951" target="_blank" rel="noreferrer" className="social-btn" aria-label="WhatsApp">💬</a>
+                  <a href="mailto:lamraniissam9@gmail.com" className="social-btn" aria-label="Email">📧</a>
                 </div>
               </div>
               <div className="footer-col">
@@ -300,14 +440,14 @@ function App() {
               </div>
               <div className="footer-col">
                 <h4>Contact</h4>
-                <p>📞 +213799031951</p>
+                <p>📞 +213 799 031 951</p>
                 <p>✉️ lamraniissam9@gmail.com</p>
                 <p>📍 Alger, Algérie</p>
-                <p>🕐 Lun - Sam: 9h00 - 18h00</p>
+                <p>🕐 Lun – Sam : 9h – 18h</p>
               </div>
             </div>
             <div className="footer-bottom">
-              <p>© 2025 MVR LUXE. Tous droits réservés.</p>
+              <p>© 2025 <span>MVR LUXE</span>. Tous droits réservés.</p>
             </div>
           </footer>
         </main>
@@ -320,35 +460,29 @@ function App() {
             <h1>Nos Produits</h1>
             <p className="breadcrumb"><span onClick={() => navigate("home")}>Accueil</span> / Produits</p>
           </div>
-
           <div className="products-layout">
-            {/* Filters */}
             <div className="filters-bar">
+              <h3>Catégories</h3>
               <div className="cat-pills">
                 {categories.map(cat => (
-                  <button key={cat}
-                    className={`cat-pill ${selectedCategory === cat ? "active" : ""}`}
-                    onClick={() => setSelectedCategory(cat)}>
+                  <button key={cat} className={`cat-pill${selectedCategory === cat ? " active" : ""}`} onClick={() => setSelectedCategory(cat)}>
                     {cat}
                   </button>
                 ))}
               </div>
-              <div className="filter-actions">
-                <button className="filter-btn">⚙️ Filtres</button>
-                <button className="filter-btn">↕️ Trier</button>
-              </div>
             </div>
-
-            {/* Grid */}
-            <div className="products-grid">
-              {filtered.length === 0 ? (
-                <div className="no-results">
-                  <span>🔍</span>
-                  <p>Aucun produit trouvé</p>
-                </div>
-              ) : (
-                filtered.map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} onOpen={setSelectedProduct} />)
-              )}
+            <div className="products-main">
+              <div className="products-toolbar">
+                <span className="products-count">{filtered.length} produit{filtered.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="products-grid">
+                {loading
+                  ? Array(8).fill(0).map((_, i) => <SkeletonCard key={i} />)
+                  : filtered.length === 0
+                    ? <div className="no-results"><span>🔍</span><p>Aucun produit trouvé</p><button className="btn-outline" onClick={() => setSelectedCategory("Tous")}>Voir tout</button></div>
+                    : filtered.map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} onOpen={setSelectedProduct} />)
+                }
+              </div>
             </div>
           </div>
         </main>
@@ -359,42 +493,29 @@ function App() {
         <main className="contact-page">
           <div className="page-header">
             <h1>Contactez-nous</h1>
-            <p>Notre équipe est disponible pour vous aider 7j/7</p>
+            <p className="breadcrumb"><span onClick={() => navigate("home")}>Accueil</span> / Contact</p>
           </div>
-
-          <div className="contact-grid">
-            <a href="https://wa.me/213560938555" className="contact-card whatsapp-card">
-              <div className="contact-icon">💬</div>
-              <h3>WhatsApp</h3>
-              <p>05 60 93 85 55</p>
-              <span className="contact-cta">Envoyer un message →</span>
-            </a>
-            <a href="tel:+213799031951" className="contact-card phone-card">
-              <div className="contact-icon">📞</div>
-              <h3>Téléphone</h3>
-              <p>05 60 93 85 55</p>
-              <span className="contact-cta">Appeler maintenant →</span>
-            </a>
-            <a href="mailto:lamraniissam9@gmail.com" className="contact-card email-card">
-              <div className="contact-icon">📧</div>
-              <h3>Email</h3>
-              <p>lamraniissam9@gmail.com</p>
-              <span className="contact-cta">Envoyer un email →</span>
-            </a>
-            <a href="https://www.instagram.com/laboratoires_MVR LUXE" target="_blank" className="contact-card insta-card">
-              <div className="contact-icon">📸</div>
-              <h3>Instagram</h3>
-              <p>@laboratoires_MVR LUXE</p>
-              <span className="contact-cta">Nous suivre →</span>
-            </a>
-          </div>
-
-          {/* Contact Info */}
-          <div className="contact-info-box">
-            <div className="info-item"><span>📍</span><div><strong>Adresse</strong><p>Alger, Algérie</p></div></div>
-            <div className="info-item"><span>🕐</span><div><strong>Horaires</strong><p>Lun - Sam: 9h00 - 18h00</p></div></div>
-            <div className="info-item"><span>📞</span><div><strong>Téléphone</strong><p>+213799031951</p></div></div>
-            <div className="info-item"><span>✉️</span><div><strong>Email</strong><p>lamraniissam9@gmail.com</p></div></div>
+          <div className="contact-layout">
+            <div className="contact-info">
+              <h2>Nous sommes là pour vous</h2>
+              <p>Notre équipe est disponible du lundi au samedi, de 9h à 18h, pour répondre à toutes vos questions.</p>
+              <div className="contact-items">
+                {[
+                  { icon:"📞", label:"Téléphone", val:"+213 799 031 951", href:"tel:+213799031951" },
+                  { icon:"✉️", label:"Email", val:"lamraniissam9@gmail.com", href:"mailto:lamraniissam9@gmail.com" },
+                  { icon:"💬", label:"WhatsApp", val:"+213 799 031 951", href:"https://wa.me/213799031951" },
+                  { icon:"📍", label:"Adresse", val:"Alger, Algérie", href:null },
+                ].map(({ icon, label, val, href }) => (
+                  <div key={label} className="contact-item">
+                    <div className="contact-icon">{icon}</div>
+                    <div>
+                      <h4>{label}</h4>
+                      {href ? <a href={href}>{val}</a> : <p>{val}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </main>
       )}
@@ -404,13 +525,22 @@ function App() {
         <div className="overlay" onClick={() => setShowCart(false)}>
           <div className="cart-drawer" onClick={e => e.stopPropagation()}>
             <div className="drawer-header">
-              <h2>🛒 Mon Panier {cartCount > 0 && <span className="count-pill">{cartCount}</span>}</h2>
+              <h2>Mon Panier {cartCount > 0 && <span className="count-pill">{cartCount}</span>}</h2>
               <button className="icon-btn" onClick={() => setShowCart(false)}>✕</button>
             </div>
 
-            {cart.length === 0 ? (
+            {orderConfirmed ? (
+              <div className="order-success">
+                <div className="success-icon">🎉</div>
+                <h3>Commande confirmée!</h3>
+                <p>Merci! Notre équipe vous contactera bientôt pour confirmer la livraison.</p>
+                <button className="btn-primary" onClick={() => { setOrderConfirmed(false); setShowCart(false); }}>
+                  Continuer les achats
+                </button>
+              </div>
+            ) : cart.length === 0 ? (
               <div className="drawer-empty">
-                <span>🛒</span>
+                <span>🛍️</span>
                 <p>Votre panier est vide</p>
                 <button className="btn-primary" onClick={() => { setShowCart(false); navigate("products"); }}>
                   Découvrir nos produits
@@ -423,7 +553,7 @@ function App() {
                     <div className="cart-item" key={item.id}>
                       <div className="cart-img">
                         {item.image && item.image.startsWith("http")
-                          ? <img src={item.image} alt={item.name} />
+                          ? <img src={item.image} alt={item.name} loading="lazy" />
                           : <span>{item.image}</span>}
                       </div>
                       <div className="cart-info">
@@ -435,18 +565,17 @@ function App() {
                         <span>{item.qty}</span>
                         <button onClick={() => updateQty(item.id, +1)}>+</button>
                       </div>
-                      <button className="rm-btn" onClick={() => removeFromCart(item.id)}>🗑️</button>
+                      <button className="rm-btn" onClick={() => removeFromCart(item.id)} aria-label="Supprimer">🗑️</button>
                     </div>
                   ))}
                 </div>
-
                 <div className="cart-form">
-                  <label>👤 Vos informations</label>
-                  <input placeholder="Nom complet" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                  <input placeholder="Numéro de téléphone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+                  <label>Vos informations</label>
+                  <input placeholder="Nom complet *" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                  <input placeholder="Numéro de téléphone *" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
                   <select onChange={handleWilayaChange} defaultValue="">
-                    <option value="" disabled>🏙️ Choisir votre wilaya</option>
-                    {wilayas.map(w => <option key={w.id} value={w.id}>{w.wilaya_code} - {w.wilaya_name}</option>)}
+                    <option value="" disabled>Choisir votre wilaya *</option>
+                    {wilayas.map(w => <option key={w.id} value={w.id}>{w.wilaya_code} — {w.wilaya_name}</option>)}
                   </select>
                   {selectedWilaya && (
                     <div className="delivery-row">
@@ -455,35 +584,48 @@ function App() {
                     </div>
                   )}
                 </div>
-
                 <div className="cart-summary">
                   <div className="sum-row"><span>Sous-total</span><span>{total.toLocaleString()} DA</span></div>
                   <div className="sum-row"><span>Livraison</span><span>{deliveryPrice > 0 ? `${deliveryPrice} DA` : "—"}</span></div>
                   <div className="sum-row sum-total"><span>Total</span><span>{(total + deliveryPrice).toLocaleString()} DA</span></div>
                 </div>
-
-                <button className="order-btn" onClick={handleOrder}>
-                  ✅ Confirmer la commande
-                </button>
+                <button className="order-btn" onClick={handleOrder}>Confirmer la commande →</button>
               </>
-            )}
-
-            {/* Confirmation screen */}
-            {orderConfirmed && (
-              <div className="order-success">
-                <div className="success-icon">✅</div>
-                <h3>Commande confirmée!</h3>
-                <p>Merci pour votre commande.<br />Notre équipe vous contactera bientôt pour confirmer la livraison.</p>
-                <button className="btn-primary" onClick={() => { setOrderConfirmed(false); setShowCart(false); }}>
-                  Continuer les achats
-                </button>
-              </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Bottom Navigation (Mobile) */}
+      {/* ===== PRODUCT DETAIL ===== */}
+      {selectedProduct && (
+        <div className="overlay" onClick={() => setSelectedProduct(null)}>
+          <div className="detail-modal" onClick={e => e.stopPropagation()}>
+            <button className="icon-btn detail-close-btn" onClick={() => setSelectedProduct(null)}>✕</button>
+            <div className="detail-img-wrap">
+              {selectedProduct.image && selectedProduct.image.startsWith("http")
+                ? <img src={selectedProduct.image} alt={selectedProduct.name} loading="lazy" />
+                : <span>{selectedProduct.image}</span>}
+            </div>
+            <div className="detail-body">
+              <span className="product-category">{selectedProduct.category}</span>
+              <h2>{selectedProduct.name}</h2>
+              <div className="stars detail-stars">★★★★★</div>
+              <p className="detail-desc">{selectedProduct.description || "Produit de haute qualité, disponible maintenant."}</p>
+              <div className="detail-price">{parseInt(selectedProduct.price) > 0 ? parseInt(selectedProduct.price).toLocaleString() + " DA" : ""}</div>
+              <div className="detail-features">
+                <span>✅ Produit Authentique</span>
+                <span>🚚 Livraison Rapide</span>
+                <span>↩️ Retour 30 jours</span>
+              </div>
+              <button className="order-btn" onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}>
+                Ajouter au panier →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== BOTTOM NAV (Mobile) ===== */}
       <nav className="bottom-nav">
         <button className={page === "home" ? "bnav-active" : ""} onClick={() => navigate("home")}>
           <span>🏠</span><span>Accueil</span>
@@ -491,58 +633,16 @@ function App() {
         <button className={page === "products" ? "bnav-active" : ""} onClick={() => navigate("products")}>
           <span>📦</span><span>Produits</span>
         </button>
-        <button onClick={() => navigate("products")}>
-          <span>⊞</span><span>Catégories</span>
-        </button>
         <button className={page === "contact" ? "bnav-active" : ""} onClick={() => navigate("contact")}>
           <span>📞</span><span>Contact</span>
         </button>
         <button onClick={() => setShowCart(true)}>
-          <span style={{position:"relative", display:"inline-block"}}>
-            🛒
-            {cartCount > 0 && <span className="bnav-badge">{cartCount}</span>}
-          </span>
+          <span className="bnav-cart-wrap">🛒{cartCount > 0 && <span className="bnav-badge">{cartCount}</span>}</span>
           <span>Panier</span>
         </button>
       </nav>
-
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="overlay" onClick={() => setSelectedProduct(null)}>
-          <div className="detail-modal" onClick={e => e.stopPropagation()}>
-            <button className="icon-btn detail-close-btn" onClick={() => setSelectedProduct(null)}>✕</button>
-            <div className="detail-img-wrap">
-              {selectedProduct.image && selectedProduct.image.startsWith("http")
-                ? <img src={selectedProduct.image} alt={selectedProduct.name} />
-                : <span style={{fontSize:"80px"}}>{selectedProduct.image}</span>}
-            </div>
-            <div className="detail-body">
-              <span className="product-category">{selectedProduct.category}</span>
-              <h2>{selectedProduct.name}</h2>
-              <div className="stars" style={{fontSize:"18px",margin:"8px 0"}}>★★★★★</div>
-              <p className="detail-desc">{selectedProduct.description || "Produit de haute qualité, disponible maintenant."}</p>
-              <div className="detail-price">{Number(selectedProduct.price).toLocaleString()} DA</div>
-              <div className="detail-features">
-                <span>✅ Produit Authentique</span>
-                <span>🚚 Livraison Rapide</span>
-                <span>↩️ Retour 30 jours</span>
-              </div>
-              <button className="order-btn" style={{marginTop:"16px"}} onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}>
-                🛒 Ajouter au panier — {Number(selectedProduct.price).toLocaleString()} DA
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showAdmin && <Admin onClose={() => setShowAdmin(false)} />}
     </div>
   );
 }
-
-export default App;
-
-
-
-
-
