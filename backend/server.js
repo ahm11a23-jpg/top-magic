@@ -70,6 +70,33 @@ app.post('/api/products', upload.array('images', 10), async (req, res) => {
 });
 
 // حذف منتج
+
+// ===== UPDATE PRODUCT =====
+app.put('/api/products/:id', upload.array('images', 10), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price, category, description, is_pack, pack_items } = req.body;
+    
+    let image = null;
+    if (req.files && req.files.length > 0) {
+      const result = await cloudinary.uploader.upload(req.files[0].path, { folder: 'mvr-luxe', resource_type: 'image' });
+      image = result.secure_url;
+    }
+
+    const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+    if (!existing) return res.status(404).json({ message: 'Produit non trouvé' });
+
+    const finalImage = image || existing.image;
+    
+    db.prepare(
+      'UPDATE products SET name=?, price=?, category=?, description=?, is_pack=?, pack_items=?, image=? WHERE id=?'
+    ).run(name, price, category, description, is_pack || '0', pack_items || null, finalImage, id);
+
+    res.json({ message: 'Produit modifié avec succès!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur serveur', error: err.message });
+  }
+});
 app.delete('/api/products/:id', (req, res) => {
   try {
     db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
@@ -149,4 +176,5 @@ app.put('/api/delivery/:id', (req, res) => {
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000');
 });
+
 

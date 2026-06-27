@@ -1,39 +1,37 @@
 ﻿import { useState, useEffect } from "react";
 import "./Admin.css";
 
+const API = "https://mvr-luxe-production.up.railway.app";
 const ADMIN_TOKEN = "admin-token-2024";
 
+const EMPTY_FORM = { name: "", price: "", category: "", description: "", images: [], is_pack: false, pack_items: [""] };
+
 function Admin({ onClose }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    localStorage.getItem("adminToken") === ADMIN_TOKEN
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("adminToken") === ADMIN_TOKEN);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [form, setForm] = useState({
-    name: "", price: "", category: "", description: "",
-    images: [], is_pack: false, pack_items: [""]
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [previews, setPreviews] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null); // null = add mode, product = edit mode
 
   useEffect(() => {
     if (isLoggedIn) { loadProducts(); loadOrders(); }
   }, [isLoggedIn]);
 
   const loadProducts = () =>
-    fetch("https://mvr-luxe-production.up.railway.app/api/products").then(r => r.json()).then(setProducts);
+    fetch(`${API}/api/products`).then(r => r.json()).then(setProducts);
 
   const loadOrders = () =>
-    fetch("https://mvr-luxe-production.up.railway.app/api/orders").then(r => r.json()).then(setOrders);
+    fetch(`${API}/api/orders`).then(r => r.json()).then(setOrders);
 
   const handleLogin = async () => {
-    const res = await fetch("https://mvr-luxe-production.up.railway.app/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch(`${API}/api/admin/login`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password })
     });
     const data = await res.json();
@@ -43,23 +41,46 @@ function Admin({ onClose }) {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setForm({ ...form, images: [...form.images, ...files] });
+    setForm(f => ({ ...f, images: [...f.images, ...files] }));
     const newPreviews = files.map(f => URL.createObjectURL(f));
     setPreviews(prev => [...prev, ...newPreviews]);
   };
 
   const removeImage = (i) => {
-    setForm({ ...form, images: form.images.filter((_, idx) => idx !== i) });
+    setForm(f => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }));
     setPreviews(prev => prev.filter((_, idx) => idx !== i));
   };
 
-  // Pack items handlers
-  const addPackItem = () => setForm({ ...form, pack_items: [...form.pack_items, ""] });
-  const removePackItem = (i) => setForm({ ...form, pack_items: form.pack_items.filter((_, idx) => idx !== i) });
+  const addPackItem = () => setForm(f => ({ ...f, pack_items: [...f.pack_items, ""] }));
+  const removePackItem = (i) => setForm(f => ({ ...f, pack_items: f.pack_items.filter((_, idx) => idx !== i) }));
   const updatePackItem = (i, val) => {
-    const items = [...form.pack_items];
-    items[i] = val;
-    setForm({ ...form, pack_items: items });
+    const items = [...form.pack_items]; items[i] = val;
+    setForm(f => ({ ...f, pack_items: items }));
+  };
+
+  // ===== EDIT product: load data into form =====
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setForm({
+      name: product.name || "",
+      price: product.price || "",
+      category: product.category || "",
+      description: product.description || "",
+      images: [],
+      is_pack: !!product.is_pack,
+      pack_items: product.pack_items ? JSON.parse(product.pack_items) : [""],
+    });
+    setPreviews([]);
+    setMessage("");
+    setActiveTab("add");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setForm(EMPTY_FORM);
+    setPreviews([]);
+    setMessage("");
+    setActiveTab("products");
   };
 
   const handleSubmit = async () => {
@@ -77,25 +98,34 @@ function Admin({ onClose }) {
     }
     form.images.forEach(img => formData.append("images", img));
 
-    const res = await fetch("https://mvr-luxe-production.up.railway.app/api/products", { method: "POST", body: formData });
+    let res;
+    if (editingProduct) {
+      // PUT for update
+      res = await fetch(`${API}/api/products/${editingProduct.id}`, { method: "PUT", body: formData });
+    } else {
+      // POST for create
+      res = await fetch(`${API}/api/products`, { method: "POST", body: formData });
+    }
+
     const data = await res.json();
-    setMessage(data.message);
-    setForm({ name: "", price: "", category: "", description: "", images: [], is_pack: false, pack_items: [""] });
+    setMessage(editingProduct ? "Produit modifié avec succès!" : data.message);
+    setForm(EMPTY_FORM);
     setPreviews([]);
+    setEditingProduct(null);
     loadProducts();
     setLoading(false);
+    if (editingProduct) setTimeout(() => setActiveTab("products"), 1200);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer ce produit?")) return;
-    await fetch(`https://mvr-luxe-production.up.railway.app/api/products/${id}`, { method: "DELETE" });
+    await fetch(`${API}/api/products/${id}`, { method: "DELETE" });
     loadProducts();
   };
 
   const updateOrderStatus = async (id, status) => {
-    await fetch(`https://mvr-luxe-production.up.railway.app/api/orders/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
+    await fetch(`${API}/api/orders/${id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
     });
     loadOrders();
@@ -104,28 +134,16 @@ function Admin({ onClose }) {
   const downloadConfirmedOrders = () => {
     const confirmed = orders.filter(o => o.status === "Confirmé");
     if (confirmed.length === 0) { alert("Aucune commande confirmée!"); return; }
-
-    // Build CSV content (Excel-compatible UTF-8)
     const rows = [
       ["#", "Client", "Téléphone", "Wilaya", "Produits", "Total (DA)", "Date"],
-      ...confirmed.map((o, i) => [
-        i + 1,
-        o.customer_name,
-        o.customer_phone,
-        o.wilaya || "",
-        o.products,
-        o.total,
-        new Date(o.created_at).toLocaleString("fr-DZ")
-      ])
+      ...confirmed.map((o, i) => [i+1, o.customer_name, o.customer_phone, o.wilaya||"", o.products, o.total, new Date(o.created_at).toLocaleString("fr-DZ")])
     ];
-    const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `commandes_confirmees_${new Date().toLocaleDateString("fr-DZ").replace(/\//g, "-")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const a = document.createElement("a"); a.href = url;
+    a.download = `commandes_${new Date().toLocaleDateString("fr-DZ").replace(/\//g,"-")}.csv`;
+    a.click(); URL.revokeObjectURL(url);
   };
 
   const totalRevenue = orders.filter(o => o.status === "Confirmé").reduce((s, o) => s + o.total, 0);
@@ -162,13 +180,15 @@ function Admin({ onClose }) {
           </div>
           <nav className="sidebar-nav">
             <button className={activeTab === "dashboard" ? "nav-active" : ""} onClick={() => setActiveTab("dashboard")}>📊 Dashboard</button>
-            <button className={activeTab === "products" ? "nav-active" : ""} onClick={() => setActiveTab("products")}>
+            <button className={activeTab === "products" ? "nav-active" : ""} onClick={() => { setActiveTab("products"); setEditingProduct(null); }}>
               📦 Produits <span className="nav-badge">{products.length}</span>
             </button>
             <button className={activeTab === "orders" ? "nav-active" : ""} onClick={() => setActiveTab("orders")}>
               📋 Commandes <span className="nav-badge">{orders.length}</span>
             </button>
-            <button className={activeTab === "add" ? "nav-active" : ""} onClick={() => setActiveTab("add")}>➕ Ajouter produit</button>
+            <button className={activeTab === "add" && !editingProduct ? "nav-active" : ""} onClick={() => { setEditingProduct(null); setForm(EMPTY_FORM); setPreviews([]); setMessage(""); setActiveTab("add"); }}>
+              ➕ Ajouter produit
+            </button>
           </nav>
           <div className="sidebar-footer">
             <button className="sidebar-logout" onClick={() => { localStorage.removeItem("adminToken"); setIsLoggedIn(false); onClose(); }}>🚪 Déconnexion</button>
@@ -176,7 +196,7 @@ function Admin({ onClose }) {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main */}
         <div className="admin-main">
 
           {/* Dashboard */}
@@ -187,7 +207,7 @@ function Admin({ onClose }) {
                 <div className="stat-card stat-blue"><span>📦</span><div><h3>{products.length}</h3><p>Produits</p></div></div>
                 <div className="stat-card stat-yellow"><span>⏳</span><div><h3>{pendingOrders}</h3><p>En attente</p></div></div>
                 <div className="stat-card stat-green"><span>✅</span><div><h3>{confirmedOrders}</h3><p>Confirmées</p></div></div>
-                <div className="stat-card stat-pink"><span>💰</span><div><h3>{totalRevenue} DA</h3><p>Chiffre d'affaires</p></div></div>
+                <div className="stat-card stat-pink"><span>💰</span><div><h3>{totalRevenue.toLocaleString()} DA</h3><p>Chiffre d'affaires</p></div></div>
               </div>
               <div className="recent-orders">
                 <h3>📋 Dernières commandes</h3>
@@ -215,32 +235,33 @@ function Admin({ onClose }) {
             <div className="admin-section">
               <div className="section-header">
                 <h2>📦 Produits ({products.length})</h2>
-                <button className="btn-add" onClick={() => setActiveTab("add")}>+ Ajouter</button>
+                <button className="btn-add" onClick={() => { setEditingProduct(null); setForm(EMPTY_FORM); setPreviews([]); setActiveTab("add"); }}>+ Ajouter</button>
               </div>
               <table className="admin-table">
-                <thead><tr><th>#</th><th>Image</th><th>Nom</th><th>Catégorie</th><th>Prix</th><th>Type</th><th>Action</th></tr></thead>
+                <thead><tr><th>#</th><th>Image</th><th>Nom</th><th>Catégorie</th><th>Prix</th><th>Type</th><th>Actions</th></tr></thead>
                 <tbody>
                   {products.map(product => (
                     <tr key={product.id}>
                       <td>{product.id}</td>
                       <td>
                         <div className="table-img">
-                          {product.image && product.image.startsWith("http") ? (
-                            <img src={product.image} alt={product.name} />
-                          ) : <span>{product.image}</span>}
+                          {product.image && product.image.startsWith("http")
+                            ? <img src={product.image} alt={product.name} />
+                            : <span>{product.image}</span>}
                         </div>
                       </td>
                       <td><strong>{product.name}</strong></td>
                       <td><span className="badge badge-pink">{product.category}</span></td>
                       <td><strong>{product.price} DA</strong></td>
                       <td>
-                        {product.is_pack ? (
-                          <span className="badge badge-green">🎁 Pack</span>
-                        ) : (
-                          <span className="badge badge-blue">📦 Simple</span>
-                        )}
+                        {product.is_pack
+                          ? <span className="badge badge-green">🎁 Pack</span>
+                          : <span className="badge badge-blue">📦 Simple</span>}
                       </td>
-                      <td><button className="btn-delete" onClick={() => handleDelete(product.id)}>🗑️ Supprimer</button></td>
+                      <td className="actions-cell">
+                        <button className="btn-edit" onClick={() => handleEdit(product)}>✏️ Modifier</button>
+                        <button className="btn-delete" onClick={() => handleDelete(product.id)}>🗑️ Supprimer</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -248,7 +269,7 @@ function Admin({ onClose }) {
             </div>
           )}
 
-          {/* Orders Table */}
+          {/* Orders */}
           {activeTab === "orders" && (
             <div className="admin-section">
               <div className="section-header">
@@ -282,70 +303,69 @@ function Admin({ onClose }) {
             </div>
           )}
 
-          {/* Add Product */}
+          {/* Add / Edit Product */}
           {activeTab === "add" && (
             <div className="admin-section">
-              <h2>➕ Ajouter un produit</h2>
-              {message && <div className="success-msg">✅ {message}</div>}
+              <h2>{editingProduct ? `✏️ Modifier: ${editingProduct.name}` : "➕ Ajouter un produit"}</h2>
+              {message && <div className={`success-msg${message.includes("!") && !message.includes("succès") ? " error-msg" : ""}`}>{message}</div>}
+
+              {/* Current image when editing */}
+              {editingProduct && editingProduct.image && (
+                <div className="current-image-box">
+                  <label>Image actuelle</label>
+                  <div className="current-image">
+                    {editingProduct.image.startsWith("http")
+                      ? <img src={editingProduct.image} alt={editingProduct.name} />
+                      : <span style={{fontSize:"48px"}}>{editingProduct.image}</span>}
+                    <p>Téléchargez une nouvelle image pour la remplacer</p>
+                  </div>
+                </div>
+              )}
+
               <div className="add-form">
-
-                {/* Type Toggle */}
                 <div className="form-group">
-                  <label>Type de produit</label>
+                  <label>TYPE DE PRODUIT</label>
                   <div className="type-toggle">
-                    <button
-                      className={!form.is_pack ? "type-btn active" : "type-btn"}
-                      onClick={() => setForm({ ...form, is_pack: false })}>
-                      📦 Produit Simple
-                    </button>
-                    <button
-                      className={form.is_pack ? "type-btn active" : "type-btn"}
-                      onClick={() => setForm({ ...form, is_pack: true })}>
-                      🎁 Pack / Gamme
-                    </button>
+                    <button className={!form.is_pack ? "type-btn active" : "type-btn"} onClick={() => setForm(f => ({ ...f, is_pack: false }))}>📦 Produit Simple</button>
+                    <button className={form.is_pack ? "type-btn active" : "type-btn"} onClick={() => setForm(f => ({ ...f, is_pack: true }))}>🎁 Pack / Gamme</button>
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Nom {form.is_pack ? "du Pack" : "du produit"}</label>
+                    <label>NOM DU PRODUIT</label>
                     <input placeholder={form.is_pack ? "Ex: Gamme Avocado Complète" : "Ex: Shampoing Argan"}
-                      value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                      value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
                   </div>
                   <div className="form-group">
-                    <label>Prix total (DA)</label>
+                    <label>PRIX TOTAL (DA)</label>
                     <input type="number" placeholder="Ex: 5500" value={form.price}
-                      onChange={e => setForm({ ...form, price: e.target.value })} />
+                      onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Catégorie</label>
+                    <label>CATÉGORIE</label>
                     <input placeholder="Ex: Soins Capillaires" value={form.category}
-                      onChange={e => setForm({ ...form, category: e.target.value })} />
+                      onChange={e => setForm(f => ({ ...f, category: e.target.value }))} />
                   </div>
                   <div className="form-group">
-                    <label>Description</label>
+                    <label>DESCRIPTION</label>
                     <input placeholder="Description du produit" value={form.description}
-                      onChange={e => setForm({ ...form, description: e.target.value })} />
+                      onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
                   </div>
                 </div>
 
-                {/* Pack Items */}
                 {form.is_pack && (
                   <div className="form-group">
-                    <label>🎁 Contenu du Pack ({form.pack_items.filter(i => i.trim()).length} produits)</label>
+                    <label>🎁 CONTENU DU PACK ({form.pack_items.filter(i => i.trim()).length} produits)</label>
                     <div className="pack-items-list">
                       {form.pack_items.map((item, i) => (
                         <div key={i} className="pack-item-row">
                           <span className="drag-handle">⋮⋮</span>
                           <div className="pack-thumb">📦</div>
-                          <input
-                            placeholder={`Ex: Shampoing Avocado`}
-                            value={item}
-                            onChange={e => updatePackItem(i, e.target.value)}
-                          />
+                          <input placeholder="Ex: Shampoing Avocado" value={item} onChange={e => updatePackItem(i, e.target.value)} />
                           <div className="pack-actions">
                             {form.pack_items.length > 1 && (
                               <button className="remove-pack-item" onClick={() => removePackItem(i)}>🗑️</button>
@@ -353,15 +373,13 @@ function Admin({ onClose }) {
                           </div>
                         </div>
                       ))}
-                      <button className="add-pack-item-btn" onClick={addPackItem}>
-                        + Ajouter un produit au pack
-                      </button>
+                      <button className="add-pack-item-btn" onClick={addPackItem}>+ Ajouter un produit au pack</button>
                     </div>
                   </div>
                 )}
 
                 <div className="form-group">
-                  <label>📷 Photos du produit ({previews.length} photo{previews.length > 1 ? "s" : ""})</label>
+                  <label>📷 PHOTOS DU PRODUIT ({previews.length} photo{previews.length > 1 ? "s" : ""})</label>
                   <label className="upload-label">
                     <div className="upload-placeholder">
                       <span>📤</span>
@@ -370,7 +388,6 @@ function Admin({ onClose }) {
                     </div>
                     <input type="file" accept="image/*" multiple onChange={handleImageChange} hidden />
                   </label>
-
                   <div className="multi-upload">
                     {previews.map((src, i) => (
                       <div key={i} className="preview-thumb">
@@ -383,23 +400,18 @@ function Admin({ onClose }) {
                 </div>
 
                 <div className="form-actions">
-                  <button className="btn-cancel" onClick={() => { setForm({ name: "", price: "", category: "", description: "", images: [], is_pack: false, pack_items: [""] }); setPreviews([]); setActiveTab('products'); }}>
-                    Annuler
+                  <button className="btn-cancel" onClick={handleCancelEdit}>Annuler</button>
+                  <button className="btn-save" onClick={handleSubmit} disabled={loading}>
+                    {loading ? "Enregistrement..." : editingProduct ? "💾 Enregistrer les modifications" : "✅ Enregistrer"}
                   </button>
-                  <div style={{marginLeft:'auto'}}>
-                    <button className="btn-save" onClick={handleSubmit} disabled={loading}>
-                      {loading ? "Enregistrement..." : form.is_pack ? "Enregistrer le Pack" : "Enregistrer"}
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
           )}
 
           <div className="admin-footer">
-            <a href="https://wa.me/213560938555" target="_blank" rel="noreferrer">💬 WhatsApp: 05 60 93 85 55</a>
+            <a href="https://wa.me/213799031951" target="_blank" rel="noreferrer">💬 WhatsApp: +213 799 031 951</a>
           </div>
-
         </div>
       </div>
     </div>
@@ -407,5 +419,4 @@ function Admin({ onClose }) {
 }
 
 export default Admin;
-
 
